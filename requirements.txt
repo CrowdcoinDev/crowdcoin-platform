@@ -42,7 +42,7 @@ psycopg2==2.7.3
 pyasn1==0.3.2
 pycparser==2.18
 pyparsing==2.2.0
-PyPDF2==1.26.0
+PyPDF2==1.27.5
 python-dateutil==2.6.1
 python-freshdesk==1.0.0
 python-mimeparse==1.6.0
