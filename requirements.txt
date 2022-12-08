@@ -5,7 +5,7 @@ beautifulsoup4==4.6.0
 billiard==3.3.0.23
 boto==2.48.0
 celery==3.1.25
-certifi==2017.7.27.1
+certifi==2022.12.7
 chardet==3.0.4
 colorclass==2.2.0
 Cython==0.26
