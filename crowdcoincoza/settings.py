@@ -42,7 +42,9 @@ CROWDCOIN_ENV = os.environ.get('CROWDCOIN_ENV')
 
 CROWDCOIN_USSD_STRING = "*120*912*87*87#"
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*'] if DEBUG else ['localhost', '127.0.0.1', '.fly.dev', '.crowdcoin.co.za']
+
+CSRF_TRUSTED_ORIGINS = ['https://*.fly.dev','https://*.crowdcoin.co.za']
 
 CELERY_ACCEPT_CONTENT = ['json']
 
@@ -101,13 +103,14 @@ WSGI_APPLICATION = 'crowdcoincoza.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-DATABASES = {'default': dj_database_url.config()}
+DATABASE_URL = env('DATABASE_URL',default='sqlite:///db.sqlite3') #('DATABASE_URL','sqlite:///db.sqlite3')
+DATABASES = {'default': dj_database_url.parse(DATABASE_URL)}
 DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
-DATABASES['default']['NAME'] = os.environ.get('DB_NAME','postgres')
-DATABASES['default']['USER'] = os.environ.get('DB_USER','postgres')
-DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD')
-DATABASES['default']['HOST'] = os.environ.get('DB_HOST','db')
-DATABASES['default']['PORT'] = 5432
+# DATABASES['default']['NAME'] = os.environ.get('DB_NAME','postgres')
+# DATABASES['default']['USER'] = os.environ.get('DB_USER','postgres')
+# DATABASES['default']['PASSWORD'] = os.environ.get('DB_PASSWORD')
+# DATABASES['default']['HOST'] = os.environ.get('DB_HOST','db')
+# DATABASES['default']['PORT'] = 5432
 
 
 # Internationalization
