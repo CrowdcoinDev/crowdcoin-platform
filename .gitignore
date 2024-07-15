@@ -1,5 +1,6 @@
 *.pyc
 .env
+.env.prod
 *.log
 static/
 venv/

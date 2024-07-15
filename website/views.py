@@ -399,6 +399,7 @@ def api_merchant_registration(request):
 #                return JsonResponse(thisisme_response,safe=False) 
 
     if not User.objects.filter(username=request.POST.get('msisdn')).exists():
+        logger.info(request.POST)
         user = User.objects.create(username=request.POST.get('msisdn'))
         user.set_password(request.POST.get('password'))
 
