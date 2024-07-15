@@ -1,1 +1,5 @@
 *.pyc
+.env
+*.log
+static/
+venv/
