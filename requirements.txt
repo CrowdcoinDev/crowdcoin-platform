@@ -50,7 +50,7 @@ python-freshdesk==1.0.0
 python-mimeparse==1.6.0
 pytz==2017.2
 redis==2.10.6
-reportlab==3.4.0
+reportlab==3.5.55
 requests==2.18.4
 six==1.10.0
 South==1.0.2
