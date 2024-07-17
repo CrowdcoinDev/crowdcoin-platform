@@ -6,6 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+CURRENCY_CHOICES = (
+    ("ZAR", "Rand"),
+    ("USD", "Dollar"),
+    ("EUR", "Euro"),
+)
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User,blank=True,null=True)
     pin = models.CharField(max_length=10,default='0000',null=True, blank=True)
@@ -291,17 +297,36 @@ class BankPaymentLead(models.Model):
         return "%s to %s : %s" % (self.pocket, self.reference, self.amount)
 
 
+class VoucherProvider(models.Model):
+    name = models.CharField(max_length=150, blank=True, null=True)
+    image = models.ImageField(upload_to="uploads/%Y/%m/%d/", null=True, blank=True)
+    description = models.CharField(max_length=500, blank=True, null=True)
+    voucher_pattern = models.CharField(max_length=500, blank=True, null=True)
+    pin_required = models.BooleanField(default=True)
+    min_amount = models.FloatField(default=0,blank=True, null=True)
+    max_amount = models.FloatField(default=0,blank=True, null=True)
+    fee = models.FloatField(default=0,blank=True, null=True)
+    comission = models.FloatField(default=0,blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    currency = models.CharField(max_length=10, default="ZAR", choices=CURRENCY_CHOICES)
+    active = models.BooleanField(default=True)
+
+    def __unicode__(self):
+        return "%s : %s %s" % (self.name, self.active, self.currency)
+
+
+
 class VoucherPaymentLead(models.Model):
     sender_name = models.CharField(max_length=150, blank=True, null=True)
     recipient_name = models.CharField(max_length=150, blank=True, null=True)
     sender_msisdn = models.CharField(max_length=150, blank=True, null=True)
     recipient_msisdn = models.CharField(max_length=150, blank=True, null=True)
     voucher_code = models.CharField(max_length=150, blank=True, null=True)
-    provider = models.CharField(max_length=150, blank=True, default='Crowdcoin')
+    provider = models.ForeignKey(VoucherProvider, blank=True, null=True)
     security_pin = models.CharField(max_length=150, blank=True, null=True)
     days_valid = models.IntegerField(default=7, blank=True, null=True)
     amount = models.FloatField(default=0,blank=True, null=True)
-    currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR")
+    currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=CURRENCY_CHOICES)
     pocket_from = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_from')
     pocket_to = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_to')
     created = models.DateTimeField(auto_now_add=True)

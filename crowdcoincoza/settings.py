@@ -138,8 +138,11 @@ STATICFILES_DIRS = [
 STATIC_URL = '/static/'
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATICFILES_LOCATION = 'static'
-MEDIAFILES_LOCATION = 'media'
+# MEDIAFILES_LOCATION = 'media'
 UPLOADS_DIRECTORY ='uploads/'
+MEDIA_ROOT = 'media',
+
+MEDIA_URL = '/media/'
 
 TASTYPIE_ALLOW_MISSING_SLASH = True
 

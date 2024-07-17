@@ -627,9 +627,36 @@ class ClaimedPromotionResource(CorsResource):
 
 
 
+
+class VoucherProviderResource(CorsResource):
+
+    class Meta:
+        authentication = MultiAuthentication(
+            InlineBasicAuthentication(),
+            BasicAuthentication(),
+            ApiKeyAuthentication(),TokenAuthentication())
+        authorization = Authorization()
+        always_return_data = True
+        allowed_methods = ['get' ,'post']
+        queryset = VoucherProvider.objects.all()
+        resource_name = 'voucher_provider'
+        serializer = Serializer()
+        exclude = []
+
+    def dehydrate_image(self, bundle):
+        url=''
+        try:
+            url = bundle.obj.image.url
+            # url = bundle.request.build_absolute_uri(bundle.obj.image.url)
+        except Exception as e:
+            logger.debug(e)
+        return url
+
+
 class VoucherPaymentLeadResource(MultipartResource,CorsResource):
     pocket_to = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_to', full=True, null=True)
     pocket_from = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_from', full=True, null=True)
+    provider = fields.ForeignKey('website.api.resources.VoucherProviderResource', 'provider', full=True, null=True)
 
     class Meta:
         authentication = MultiAuthentication(
