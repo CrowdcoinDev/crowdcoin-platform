@@ -39,6 +39,7 @@ urlpatterns = [
                 url(r'^admin/', admin.site.urls),
                 url(r'^api/', include(v1_api.urls)),
                 url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
+                url(r'^media/(?P<file_path>.*)', view=MediaView),
                 url(r'^%ssupport_ticket_create/$' % api_prefix, view=support_ticket_create),
                 url(r'^%ssmsinbound$' % api_prefix, view=SmsInboundView, name='smsinbound'),
                 url(r'^%screate_transaction/$' % api_prefix, view=create_funds_transaction_api),

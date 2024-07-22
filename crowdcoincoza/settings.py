@@ -140,7 +140,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 STATICFILES_LOCATION = 'static'
 # MEDIAFILES_LOCATION = 'media'
 UPLOADS_DIRECTORY ='uploads/'
-MEDIA_ROOT = 'media',
+MEDIA_ROOT = 'media'
 
 MEDIA_URL = '/media/'
 

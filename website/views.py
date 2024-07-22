@@ -496,3 +496,16 @@ def get_otp_view(request):
         else:
             response = {"status": "error", "message": "OTP Verification failed"}
     return JsonResponse(response,safe=False)    
+
+def MediaView(request, file_path=None):
+    media_root = getattr(settings, 'MEDIA_ROOT', None)
+
+    if not media_root:
+        return HttpResponseBadRequest('Invalid Media Root Configuration')
+    if not file_path:
+        return HttpResponseBadRequest('Invalid File Path')
+    
+    with open(os.path.join(media_root, file_path), 'rb') as doc:
+        response = HttpResponse(doc.read(), content_type='application/doc')
+        response['Content-Disposition'] = 'filename=%s' % (file_path.split('/')[-1])
+        return response    

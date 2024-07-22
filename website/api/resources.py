@@ -22,6 +22,7 @@ from website.utils import get_user_available_balance,register_new_user,thisisme_
 import json
 from decimal import Decimal
 
+
 logger = logging.getLogger(__name__)
 
 class MultipartResource(object):
@@ -631,23 +632,32 @@ class ClaimedPromotionResource(CorsResource):
 class VoucherProviderResource(CorsResource):
 
     class Meta:
-        authentication = MultiAuthentication(
-            InlineBasicAuthentication(),
-            BasicAuthentication(),
-            ApiKeyAuthentication(),TokenAuthentication())
+        authentication = Authentication()
         authorization = Authorization()
         always_return_data = True
-        allowed_methods = ['get' ,'post']
+        allowed_methods = ['get' ]
         queryset = VoucherProvider.objects.all()
         resource_name = 'voucher_provider'
         serializer = Serializer()
         exclude = []
 
+
+    def dehydrate_currency(self, bundle):
+        # Create a dictionary for currency mapping from CURRENCY_CHOICES
+        # import pdb; pdb.set_trace()
+
+        currency_mapping = {currency[0]: {'currency': currency[0], 'name': currency[1], 'symbol': currency[2]} for currency in CURRENCY_CHOICES}
+
+        currency_code = bundle.obj.currency
+        currency_info = currency_mapping.get(currency_code, {'currency': currency_code, 'name': '', 'symbol': ''})
+        
+        return currency_info
+
     def dehydrate_image(self, bundle):
         url=''
         try:
-            url = bundle.obj.image.url
-            # url = bundle.request.build_absolute_uri(bundle.obj.image.url)
+            # url = bundle.obj.image.url
+            url = bundle.request.build_absolute_uri(bundle.obj.image.url)
         except Exception as e:
             logger.debug(e)
         return url

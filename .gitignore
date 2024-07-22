@@ -3,5 +3,6 @@
 .env.prod
 *.log
 static/
+media/
 venv/
 *.sqlite3

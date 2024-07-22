@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.db import models
 from django.contrib.auth.models import User,Group
 from django.db.models import Sum
@@ -7,9 +9,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 CURRENCY_CHOICES = (
-    ("ZAR", "Rand"),
-    ("USD", "Dollar"),
-    ("EUR", "Euro"),
+    ('ZAR', 'Rand', 'R'),
+    ('USD', 'Dollar', '$'),
+    ('EUR', 'Euro', '€')
 )
 
 class UserProfile(models.Model):
@@ -303,12 +305,13 @@ class VoucherProvider(models.Model):
     description = models.CharField(max_length=500, blank=True, null=True)
     voucher_pattern = models.CharField(max_length=500, blank=True, null=True)
     pin_required = models.BooleanField(default=True)
+    conversion_duration = models.IntegerField(default=60,blank=True, null=True)
     min_amount = models.FloatField(default=0,blank=True, null=True)
     max_amount = models.FloatField(default=0,blank=True, null=True)
     fee = models.FloatField(default=0,blank=True, null=True)
     comission = models.FloatField(default=0,blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
-    currency = models.CharField(max_length=10, default="ZAR", choices=CURRENCY_CHOICES)
+    currency = models.CharField(max_length=10, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
     active = models.BooleanField(default=True)
 
     def __unicode__(self):
@@ -326,7 +329,7 @@ class VoucherPaymentLead(models.Model):
     security_pin = models.CharField(max_length=150, blank=True, null=True)
     days_valid = models.IntegerField(default=7, blank=True, null=True)
     amount = models.FloatField(default=0,blank=True, null=True)
-    currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=CURRENCY_CHOICES)
+    currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
     pocket_from = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_from')
     pocket_to = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_to')
     created = models.DateTimeField(auto_now_add=True)
