@@ -3,6 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import User,Group
 from django.db.models import Sum
+from django.utils.text import slugify
 import decimal
 import logging
 
@@ -303,6 +304,9 @@ class VoucherProvider(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True)
     image = models.ImageField(upload_to="uploads/%Y/%m/%d/", null=True, blank=True)
     description = models.CharField(max_length=500, blank=True, null=True)
+    company = models.CharField(max_length=500, blank=True, null=True)
+    website = models.CharField(max_length=500, blank=True, null=True)
+    telephone = models.CharField(max_length=500, blank=True, null=True)
     voucher_pattern = models.CharField(max_length=500, blank=True, null=True)
     pin_required = models.BooleanField(default=True)
     conversion_duration = models.IntegerField(default=60,blank=True, null=True)
@@ -313,11 +317,25 @@ class VoucherProvider(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     currency = models.CharField(max_length=10, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
     active = models.BooleanField(default=True)
+    slug = models.SlugField(max_length=255, null=True, blank=True)
 
     def __unicode__(self):
         return "%s : %s %s" % (self.name, self.active, self.currency)
 
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate initial slug
+            self.slug = slugify(self.name)
+            # Check for collisions and add a counter if needed
+            original_slug = self.slug
+            queryset = VoucherProvider.objects.filter(slug=self.slug).exclude(pk=self.pk)
+            counter = 1
+            while queryset.exists():
+                self.slug = "{}-{}".format(original_slug, counter)
+                counter += 1
+                queryset = VoucherProvider.objects.filter(slug=self.slug).exclude(pk=self.pk)
+        super(VoucherProvider, self).save(*args, **kwargs)
 
 class VoucherPaymentLead(models.Model):
     sender_name = models.CharField(max_length=150, blank=True, null=True)
