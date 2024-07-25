@@ -72,11 +72,15 @@ class PocketAuthorization(ReadOnlyAuthorization):
     '''
     def read_list(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
+        if bundle.request.user.is_superuser :
+            return object_list
         return object_list.filter(pocket__in=user_profile.pockets.all())
 
     def read_detail(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
-        return bundle.obj.pocket in user_profile.pockets.all()
+        if bundle.request.user.is_superuser or bundle.obj.pocket in user_profile.pockets.all():
+            return True
+        return False
 
     def create_list(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
@@ -84,15 +88,23 @@ class PocketAuthorization(ReadOnlyAuthorization):
 
     def create_detail(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
-        return object_list.filter(pocket__in=user_profile.pockets.all())
+        # import pdb; pdb.set_trace()
+        if bundle.request.user.is_superuser or bundle.obj.pocket in user_profile.pockets.all():
+            return True
+        return False
 
     def update_list(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
+        if bundle.request.user.is_superuser :
+            return object_list
         return object_list.filter(pocket__in=user_profile.pockets.all())
 
     def update_detail(self, object_list, bundle):
         user_profile = UserProfile.objects.get(user=bundle.request.user)
-        return bundle.obj.pocket in user_profile.pockets.all()
+
+        if bundle.request.user.is_superuser or bundle.obj.pocket in user_profile.pockets.all():
+            return True
+        return False
 
     def delete_list(self, object_list, bundle):
         return []

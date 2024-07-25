@@ -362,6 +362,45 @@ class VoucherPaymentLead(models.Model):
         return "%s : %s %s" % (self.voucher_code, self.amount, self.currency)
 
 
+
+class Voucher(models.Model):
+    voucher_code = models.CharField(max_length=150, blank=True, null=True)
+    provider = models.ForeignKey(VoucherProvider, blank=True, null=True)
+    security_pin = models.CharField(max_length=150, blank=True, null=True)
+    expiary_date = models.DateTimeField(blank=True, null=True)
+    amount = models.FloatField(default=0,blank=True, null=True)
+    currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
+    created = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=100, default="Pending", choices=(("Awaiting Collection", "Awaiting Collection"),
+                                                                          ("Collected", "Collected"),
+                                                                          ("Pending", "Pending"),
+                                                                          ("Declined", "Declined"),
+                                                                          ("Canceled", "Canceled")))
+    active = models.BooleanField(default=True)
+
+    def __unicode__(self):
+        return "%s : %s %s" % (self.voucher_code, self.amount, self.currency)
+
+
+
+class VoucherExchangeLead(models.Model):
+    pocket = models.ForeignKey(Pocket)
+    old_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='old_voucher')
+    new_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='new_voucher')
+    created = models.DateTimeField(auto_now_add=True, null=True)
+    updated = models.DateTimeField(auto_now=True, null=True)
+    status = models.CharField(max_length=100, default="Pending", choices=(("Awaiting Collection", "Awaiting Collection"),
+                                                                          ("Collected", "Collected"),
+                                                                          ("Pending", "Pending"),
+                                                                          ("Declined", "Declined"),
+                                                                          ("Canceled", "Canceled")))
+    active = models.BooleanField(default=True)
+    transactions = models.ManyToManyField(Transaction, blank=True)
+
+    def __unicode__(self):
+        return "%s : %s %s" % (self.status, self.old_voucher, self.new_voucher)
+
+
 class SmsTemplate(models.Model):
     name = models.CharField(max_length=150, blank=True, null=True)
     identifiers = models.ManyToManyField(UniqueIdentifier, blank=True)

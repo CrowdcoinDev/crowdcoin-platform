@@ -76,6 +76,11 @@ class SimCardAdmin(admin.ModelAdmin):
 
 
 
+class VoucherExchangeLeadAdmin(admin.ModelAdmin):
+    list_display = ["status", "old_voucher", "new_voucher", "created"]
+    list_filter = ['created',"status"]
+
+
 admin.site.register(SmsOutBound)
 admin.site.register(SmsInbound)
 admin.site.register(UserProfile,UserProfileAdmin)
@@ -96,3 +101,5 @@ admin.site.register(Promotion)
 admin.site.register(ClaimedPromotion)
 admin.site.register(OneTimePin)
 admin.site.register(AirtimeDepositTransaction,AirtimeDepositTransactionAdmin)
+admin.site.register(Voucher)
+admin.site.register(VoucherExchangeLead,VoucherExchangeLeadAdmin)

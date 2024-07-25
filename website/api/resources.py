@@ -627,6 +627,81 @@ class ClaimedPromotionResource(CorsResource):
         exclude = []
 
 
+class VoucherResource(CorsResource):
+    provider = fields.ForeignKey('website.api.resources.VoucherProviderResource', 'provider', full=True, null=True)
+
+    class Meta:
+        authentication = MultiAuthentication(
+            InlineBasicAuthentication(),
+            ApiKeyAuthentication(),
+            BasicAuthentication(),
+            TokenAuthentication())
+        authorization = Authorization()
+        always_return_data = True
+        allowed_methods = ['get','post','put' ]
+        queryset = Voucher.objects.all()
+        resource_name = 'vouchers'
+        serializer = Serializer()
+        exclude = []
+
+    def hydrate(self, bundle):
+        REQUIRED_FIELDS = ["provider"]
+        for field in REQUIRED_FIELDS:
+            if field not in bundle.data:
+                raise CustomBadRequest(
+                    code="missing_key",
+                    message="Must provide {missing_key} when creating a Voucher."
+                        .format(missing_key=field)
+                        )        
+
+        return bundle
+
+class VoucherExchangeLeadResource(CorsResource):
+    old_voucher = fields.ForeignKey('website.api.resources.VoucherResource', 'old_voucher', full=True)
+    new_voucher = fields.ForeignKey('website.api.resources.VoucherResource', 'new_voucher', full=True)
+    pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=False)
+
+    class Meta:
+        authentication = MultiAuthentication(
+            InlineBasicAuthentication(),
+            ApiKeyAuthentication(),
+            BasicAuthentication(),
+            TokenAuthentication())
+        authorization = PocketAuthorization()
+        always_return_data = True
+        allowed_methods = ['get','post', 'put' ]
+        queryset = VoucherExchangeLead.objects.all()
+        resource_name = 'voucher_exchanges'
+        serializer = Serializer()
+        exclude = []
+
+
+    def hydrate(self, bundle):
+        REQUIRED_FIELDS = ["old_voucher","new_voucher","pocket"]
+        for field in REQUIRED_FIELDS:
+            if field not in bundle.data:
+                raise CustomBadRequest(
+                    code="missing_key",
+                    message="Must provide {missing_key} when creating a Voucher Exchange Lead."
+                        .format(missing_key=field)
+                        ) 
+
+        try:
+            pocket = PocketResource().get_via_uri(bundle.data.get("pocket"))
+        except Exception as e:
+            pocket = None
+
+
+        user_profile = UserProfile.objects.get(user=bundle.request.user)
+        if pocket :
+            if pocket not in user_profile.pockets.all() and bundle.request.user.is_superuser == False:
+                raise CustomBadRequest(
+                    code="unauthorised",
+                    message="You do not own {missing_key}."
+                        .format(missing_key=bundle.data.get("pocket")))
+
+        logger.info(bundle.data)                               
+        return bundle
 
 
 class VoucherProviderResource(CorsResource):
@@ -637,7 +712,7 @@ class VoucherProviderResource(CorsResource):
         always_return_data = True
         allowed_methods = ['get' ]
         queryset = VoucherProvider.objects.all()
-        resource_name = 'voucher_provider'
+        resource_name = 'voucher_providers'
         serializer = Serializer()
         exclude = []
 
