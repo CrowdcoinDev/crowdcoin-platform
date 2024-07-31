@@ -371,6 +371,7 @@ class Voucher(models.Model):
     amount = models.FloatField(default=0,blank=True, null=True)
     currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
     created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True, null=True)
     status = models.CharField(max_length=100, default="Pending", choices=(("Awaiting Collection", "Awaiting Collection"),
                                                                           ("Collected", "Collected"),
                                                                           ("Pending", "Pending"),

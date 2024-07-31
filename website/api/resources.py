@@ -644,6 +644,21 @@ class VoucherResource(CorsResource):
         serializer = Serializer()
         exclude = []
 
+    def dehydrate_currency(self, bundle):
+        # Create a dictionary for currency mapping from CURRENCY_CHOICES
+        # import pdb; pdb.set_trace()
+
+        currency_mapping = {currency[0]: {'currency': currency[0], 'name': currency[1], 'symbol': currency[2]} for currency in CURRENCY_CHOICES}
+
+        currency_code = bundle.obj.currency
+        currency_info = currency_mapping.get(currency_code, {'currency': currency_code, 'name': '', 'symbol': ''})
+        
+        return currency_info
+
+    def dehydrate_amount(self, bundle):
+        return Decimal(bundle.obj.amount)
+
+
     def hydrate(self, bundle):
         REQUIRED_FIELDS = ["provider"]
         for field in REQUIRED_FIELDS:
