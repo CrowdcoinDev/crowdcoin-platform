@@ -40,6 +40,7 @@ v1_api.register(SmsOutBoundResource())
 urlpatterns = [
                 url(r'^admin/', admin.site.urls),
                 url(r'^api/', include(v1_api.urls)),
+                url(r'^%swhatsapp/' % api_prefix, include('whatsapp_bot.urls')),
                 url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
                 url(r'^media/(?P<file_path>.*)', view=MediaView),
                 url(r'^%ssupport_ticket_create/$' % api_prefix, view=support_ticket_create),

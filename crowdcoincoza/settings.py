@@ -64,6 +64,7 @@ INSTALLED_APPS = (
     'website',
     'django.contrib.sites',
     'tastypie',
+    'whatsapp_bot',
 )
 
 SITE_ID = 1
@@ -232,3 +233,9 @@ PANACEA_PASSWORD  = os.environ.get('PANACEA_PASSWORD')
 TIM_CERT = os.environ.get('TIM_CERT')
 
 TIM_KEY = os.environ.get('TIM_KEY')
+
+#Whatsapp
+
+WEBHOOK_VERIFY_TOKEN = os.environ.get('WEBHOOK_VERIFY_TOKEN',None) 
+GRAPH_API_TOKEN = os.environ.get('GRAPH_API_TOKEN',None) 
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY',None) 
