@@ -4,5 +4,5 @@
 *.log
 static/
 media/
-venv/
+venv*/
 *.sqlite3

@@ -16,7 +16,6 @@ from django.template import Context
 from tastypie.models import ApiKey
 from xhtml2pdf import pisa
 from django import template
-from freshdesk.api import API as FreshdeskApi
 from django.conf import settings
 
 
@@ -30,7 +29,7 @@ def generate_source_id():
         source_id=''
         while len(source_id)<10:
             n=random.randint(0,9)
-            source_id+=`n`
+            source_id += 'n'
         source_id = int(source_id)
 
         if not SmsOutBound.objects.filter(source_id=source_id).exists():
@@ -50,7 +49,7 @@ def transaction_double_entry_hook(sender, **kwargs):
         if Pocket.objects.filter(identifiers__value=double_entry_id_value,identifiers__name=double_entry_id_type).exists():
             logger.info("Found matching Pocket")
             pocket = Pocket.objects.get(identifiers__name=double_entry_id_type,identifiers__value=double_entry_id_value)
-            print pocket
+            print( pocket)
         else:
             #Flag transaction when no matching double entry key exists
             logger.info("Matching Pocket Not Found")
@@ -146,7 +145,7 @@ def send_reg_email(email_address,full_names,username,password):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
 
-    except Exception,e:
+    except Exception as e:
         logger.error(e)
 
 
@@ -188,7 +187,7 @@ def convertHtmlToPdf(sourceHtml, outputFilename,fail_silently=True):
         resultFile.close()                 # close output file
         # return True on success and False on errors
         return pisaStatus.err
-    except Exception,e:
+    except Exception as e:
         logger.warning(e)
 
 
@@ -245,7 +244,7 @@ def email_admin_summary(account_no=None,recipients=['billing@crowdcoin.co.za'], 
             msg.attach_alternative(html_content, "text/html")
             msg.send()
 
-    except Exception,e:
+    except Exception as e:
         logger.error(e)
 
 def migrate_patch():
@@ -261,15 +260,15 @@ def migrate_patch():
             profile.save()
 
 
-    except Exception,e:
+    except Exception as e:
         logger.info(e)
 
 class TokenAuthenticationMiddleware(object):
     def authenticate(self, username=None,token=None):
-        print "Custom authentication - %s - %s" %(username,token)
+        print( "Custom authentication - %s - %s" %(username,token))
         if ApiKey.objects.filter(user__username=username,key=token).exists():
             user = User.objects.get(username=username)
-            print "returning", str(user)
+            print( "returning", str(user))
             return user
         else:
             return None
@@ -313,25 +312,28 @@ def mail_promo(user_profile=None,send_email=True):
                 msg.attach_alternative(html_content, "text/html")
                 msg.send()
 
-        except Exception,e:
+        except Exception as e:
             logger.error(e)
 
 
 
 
 def freshdesk_new_ticket(name,subject, description, email=None, phone=None,company=None,priority=1, status=2,source=2):
-    freshdesk_api = FreshdeskApi(settings.FRESHDESK_URL, settings.FRESHDESK_KEY, version=2)
+    # freshdesk_api = FreshdeskApi(settings.FRESHDESK_URL, settings.FRESHDESK_KEY, version=2)
 
 
-    ticket = freshdesk_api.tickets.create_ticket(subject,
-        description=description,
-        email=email,
-        phone=phone,
-        name=name,
-        company=company,
-        type='Lead',
-        responder_id=6003130775,
-        priority=priority)
+    # ticket = freshdesk_api.tickets.create_ticket(subject,
+    ticket = {
+        "subject":subject,
+        "description":description,
+        "email":email,
+        "phone":phone,
+        "name":name,
+        "company":company,
+        "type":'Lead',
+        "responder_id":"6003130775",
+        "priority":priority
+    }
 
     logger.warning(ticket)
     return
@@ -353,7 +355,7 @@ def ProcessEmailTransaction():
         try:
             """
             Do something with emails messages in the folder.
-            For the sake of this example, print some headers.
+            For the sake of this example, print( some headers.)
             """
 
             rv, data = M.search(None, 'SUBJECT', "Forwarded Message")
@@ -371,13 +373,13 @@ def ProcessEmailTransaction():
                 decode = email.header.decode_header(msg['Subject'])[0]
                 subject = unicode(decode[0])
                 body = msg.get_payload(decode=True)
-                #print 'Raw Date:', msg['Date']
+                #print( 'Raw Date:', msg['Date'])
                 # Now convert to local date-time
                 date_tuple = email.utils.parsedate_tz(msg['Date'])
                 if date_tuple:
                     local_date = datetime.datetime.fromtimestamp(
                         email.utils.mktime_tz(date_tuple))
-                    # print "Local Date:", \
+                    # print( "Local Date:", \)
                     #     local_date.strftime("%a, %d %b %Y %H:%M:%S")
                 if not EmailTransaction.objects.filter(received=local_date).exists():
                     if "Forwarded Message from MTN141" == subject and body not in ['',None]:
@@ -422,7 +424,7 @@ def ProcessEmailTransaction():
         logger.error("LOGIN FAILED!!!")
         sys.exit(1)
 
-    print rv, data
+    print( rv, data)
 
     rv, mailboxes = M.list()
     if rv == 'OK':
@@ -464,7 +466,7 @@ def process_vodacom_leads(cell_no,password):
     response=request.post(url_login,urllib.urlencode(body),headers=headers)
     logger.info(response.content)
     if response.json()['successfull']:
-        print "logged in"
+        print( "logged in")
         #Get statement
         response=request.post(url_statement,urllib.urlencode(body),headers=headers)
         if response.json()['successfull']:
@@ -508,7 +510,7 @@ def thisisme_id_check(identity_number,country_code='ZA',username=None,identity_t
                 verify=False,
                 params=data)
         except Exception as e:
-            print e.message
+            print( e)
             return {'response': "An error occured while verifying your Identity. Please check the supplied information and try again.", 'status': 'error'}
         logger.info(response.text)
         response = response.json()
@@ -533,8 +535,8 @@ def thisisme_id_check(identity_number,country_code='ZA',username=None,identity_t
             return {'response':response_data,'status':'success'}
         else:
             return {'response': response['response']['description'], 'status': 'success'}
-    except Exception, e:
-        logger.error(e.message)
+    except Exception as e:
+        logger.error(e)
         return {'response':response,'status':'error'}
         
 def get_user_available_balance(username=None,ending=None):
@@ -560,7 +562,7 @@ def get_user_available_balance(username=None,ending=None):
             fees['fee__sum'] = 0
         available_balance = credits.get('amount__sum')-(debits.get('amount__sum')+fees.get('fee__sum'))
         return available_balance
-    except Exception,e:
+    except Exception as e:
         logger.info(e)
 
 

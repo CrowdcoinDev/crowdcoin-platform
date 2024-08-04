@@ -58,7 +58,7 @@ def ussdView(request):
         # try:
         #     ussd_request_args = ussd_request.strip("#").split(settings.CROWDCOIN_USSD_STRING[:-1],1)[1][1:].split("*")
         # except Exception as e:
-        #     logger.debug(e.message)
+        #     logger.debug(e)
         #     ussd_request_args = ussd_request
         # logger.debug(settings.CROWDCOIN_USSD_STRING)
         # logger.debug(ussd_request)
@@ -311,8 +311,8 @@ def api_generate_deposit_lead(request):
         response = {"status":"error",'response':"WE COULD NOT ALLOCATE A RECIEVING NUMBER. TRY AGAIN WITH A LESSER AMOUNT OR TRY AGAIN TOMORROW."}
 
   except Exception as e:
-    logger.warning(e.message)
-    response = e.message
+    logger.warning(e)
+    response = e
   return JsonResponse(response,safe=False)
 
 def reset_password(request):
@@ -347,7 +347,7 @@ def export_funds_csv(request):
         for transaction in transactions_list:
             writer.writerow([transaction.id,transaction.datetime,transaction.description,transaction.transaction_type.action,transaction.amount,transaction.fee])
 
-    except Exception,e:
+    except Exception as e:
         logger.warning(e)
     return response
 
@@ -394,7 +394,7 @@ def api_merchant_registration(request):
 #            try:
 #                i=(request.POST.get('last_name').upper()).index(thisisme_response.get('surname').upper())
 #            except Exception as e:
-#                logger.info(e.message)
+#                logger.info(e)
 #                response = {"status":"ERROR","response":"The provided identity information appears to be incorrect. Please check the supplied information and try again or contact support. "}
 #                return JsonResponse(thisisme_response,safe=False) 
 
@@ -460,7 +460,7 @@ def api_merchant_registration(request):
               subject="NEW MERCHANT USER REGISTRATION"
           )
         except Exception as e:
-            logger.warning(e.message)
+            logger.warning(e)
 
         response = {"status":"SUCCESS","response":"Thank you for signing up. You can now sign in using your new username: {username}".format(username=user.username)}
     else:

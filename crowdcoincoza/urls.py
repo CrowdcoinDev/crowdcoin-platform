@@ -1,9 +1,9 @@
-from django.conf.urls import  include, url
+from django.urls import include, path, re_path
 from django.contrib.auth import views as auth_views
 from django.contrib import admin
 from website.views import *
 from django.conf.urls.static import static
-from django.views import static
+from django.views.static import serve as static_serve
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 from tastypie.api import Api
@@ -11,8 +11,7 @@ from website.api.resources import *
 
 admin.autodiscover()
 admin.site.site_header = 'Crowdcoin Dashboard'
-#handler404='website.views.custom_404'
-#handler500='website.views.custom_500'
+
 api_prefix = "api/v1/"
 v1_api = Api(api_name='v1')
 v1_api.register(UserProfileResource())
@@ -38,23 +37,22 @@ v1_api.register(ClaimedPromotionResource())
 v1_api.register(SmsOutBoundResource())
 
 urlpatterns = [
-                url(r'^admin/', admin.site.urls),
-                url(r'^api/', include(v1_api.urls)),
-                url(r'^%swhatsapp/' % api_prefix, include('whatsapp_bot.urls')),
-                url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
-                url(r'^media/(?P<file_path>.*)', view=MediaView),
-                url(r'^%ssupport_ticket_create/$' % api_prefix, view=support_ticket_create),
-                url(r'^%ssmsinbound$' % api_prefix, view=SmsInboundView, name='smsinbound'),
-                url(r'^%screate_transaction/$' % api_prefix, view=create_funds_transaction_api),
-                url(r'^%sreset_password/$' % api_prefix, view=reset_password),
-                url(r'^%sdeposit_lead/$' % api_prefix, view=api_generate_deposit_lead),
-                url(r'^%sexport/$' % api_prefix, view=export_funds_csv),
-                url(r'^%slogin/$' % api_prefix, view=api_login),
-                url(r'^%sregister_merchant/$' % api_prefix, view=api_merchant_registration),
-                url(r'^%sussd/$' % api_prefix, view=ussdView, name='ussd'),
-                url(r'^%sotp/$' % api_prefix, get_otp_view, name='get_otp'),
-                url(r'^loaderio-b193a2f576f0426fef58ef4dbe597971/$', view=loaderio),
-                #url(r'^sso/', include('freshdesk.urls')),
-                url(r'^$', view=LandingView, name="landing")
-]+ staticfiles_urlpatterns()
-
+    path('admin/', admin.site.urls),
+    path('api/', include(v1_api.urls)),
+    path(f'{api_prefix}whatsapp/', include('whatsapp_bot.urls')),
+    re_path(r'^static/(?P<path>.*)$', static_serve, {'document_root': settings.STATIC_ROOT}),
+    re_path(r'^media/(?P<file_path>.*)', MediaView),
+    path(f'{api_prefix}support_ticket_create/', support_ticket_create),
+    path(f'{api_prefix}smsinbound', SmsInboundView, name='smsinbound'),
+    path(f'{api_prefix}create_transaction/', create_funds_transaction_api),
+    path(f'{api_prefix}reset_password/', reset_password),
+    path(f'{api_prefix}deposit_lead/', api_generate_deposit_lead),
+    path(f'{api_prefix}export/', export_funds_csv),
+    path(f'{api_prefix}login/', api_login),
+    path(f'{api_prefix}register_merchant/', api_merchant_registration),
+    path(f'{api_prefix}ussd/', ussdView, name='ussd'),
+    path(f'{api_prefix}otp/', get_otp_view, name='get_otp'),
+    path('loaderio-b193a2f576f0426fef58ef4dbe597971/', loaderio),
+    # path('sso/', include('freshdesk.urls')),
+    path('', LandingView, name="landing"),
+] + staticfiles_urlpatterns() + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

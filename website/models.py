@@ -16,7 +16,7 @@ CURRENCY_CHOICES = (
 )
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User,blank=True,null=True)
+    user = models.OneToOneField(User,blank=True,null=True, on_delete=models.SET_NULL)
     pin = models.CharField(max_length=10,default='0000',null=True, blank=True)
     identifier = models.ManyToManyField('UniqueIdentifier', blank=True, related_name="user_profile_identifier")
     is_verified = models.BooleanField(default=False)
@@ -36,13 +36,13 @@ class UserProfile(models.Model):
     referrer = models.CharField(max_length=100, blank=True, null=True)
     display_name = models.CharField(max_length=100, blank=True, null=True)
     pockets = models.ManyToManyField('Pocket', related_name="user_profile_pocket",blank=True)
-    default_pocket = models.ForeignKey('Pocket',related_name="user_profile_default_pocket",null=True,blank=True)
+    default_pocket = models.ForeignKey('Pocket',related_name="user_profile_default_pocket",null=True,blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return "%s : %s"% (self.user.username, self.default_pocket)
 
 class Merchant(models.Model):
-    profile = models.ForeignKey('UserProfile',related_name='merchant_profile')
+    profile = models.ForeignKey('UserProfile',related_name='merchant_profile', on_delete=models.CASCADE)
     trading_name = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=500, blank=True, null=True)
     registration_number = models.CharField(max_length=50, blank=True, null=True)
@@ -64,7 +64,7 @@ class Merchant(models.Model):
     subscription= models.CharField(max_length=100,default="Trial",choices=(("Trial","Trial"),
                                                                    ("Premium","Premium"),
                                                                    ("Enterprise","Enterprise")))    
-    default_pocket = models.ForeignKey('Pocket',related_name="merchant_profile_default_pocket",null=True,blank=True)    
+    default_pocket = models.ForeignKey('Pocket',related_name="merchant_profile_default_pocket",null=True,blank=True, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     display_on_website = models.BooleanField(default=False)
 
@@ -73,7 +73,7 @@ class Merchant(models.Model):
 
 
 class Promotion(models.Model):
-    referrer = models.ForeignKey('Pocket',related_name="referrer_pocket",null=True,blank=True)
+    referrer = models.ForeignKey('Pocket',related_name="referrer_pocket",null=True,blank=True, on_delete=models.CASCADE)
     code = models.CharField(max_length=50, blank=True, null=True)
     description = models.CharField(max_length=500, blank=True, null=True)
     discount_amount = models.DecimalField(decimal_places=2, max_digits=20, default=0)
@@ -89,8 +89,8 @@ class Promotion(models.Model):
 class ClaimedPromotion(models.Model):
     
     """docstring for ClaimedPromotion"""
-    promotion = models.ForeignKey('Promotion',related_name="promotion")
-    referred = models.ForeignKey('Pocket',related_name="referred_pocket",null=True,blank=True)
+    promotion = models.ForeignKey('Promotion',related_name="promotion", on_delete=models.CASCADE)
+    referred = models.ForeignKey('Pocket',related_name="referred_pocket",null=True,blank=True, on_delete=models.CASCADE)
     datetime = models.DateTimeField(auto_created=True,null=True,blank=True)
     active = models.BooleanField(default=True)
 
@@ -101,7 +101,7 @@ class ClaimedPromotion(models.Model):
 
 class Transaction(models.Model):
     debit = models.BooleanField(default=True)
-    pocket = models.ForeignKey('Pocket',blank=True, null=True, related_name="transaction_pocket")
+    pocket = models.ForeignKey('Pocket',blank=True, null=True, related_name="transaction_pocket", on_delete=models.CASCADE)
     identifiers = models.ManyToManyField('UniqueIdentifier',  blank=True, related_name="transaction_identifiers")
     amount = models.DecimalField(decimal_places=2, max_digits=20)
     datetime = models.DateTimeField(auto_created=True,null=True,blank=True)
@@ -153,7 +153,7 @@ class SmsInbound(models.Model):
         return self.message
 
 class SmsOutBound(models.Model):
-    recipient = models.ForeignKey(UserProfile,null=True,blank=True)
+    recipient = models.ForeignKey(UserProfile,null=True,blank=True, on_delete=models.CASCADE)
     msisdn = models.CharField(max_length=500,null=True,blank=True)
     message = models.CharField(max_length=500)
     datetime = models.DateTimeField(auto_now=True)
@@ -181,7 +181,7 @@ class Network(models.Model):
 
 
 class SimCard(models.Model):
-    network = models.ForeignKey(Network,blank=True,null=True)
+    network = models.ForeignKey(Network,blank=True,null=True, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     balance_day = models.FloatField(blank=True,null=True,default=0)
     balance_month = models.FloatField(blank=True,null=True,default=0)
@@ -210,7 +210,7 @@ class UniqueIdentifier(models.Model):
 
 
 class AirtimeDepositTransaction(models.Model):
-    sim_card = models.ForeignKey(SimCard,blank=True, null=True, related_name="airtime_deposit_transaction_sim_card")
+    sim_card = models.ForeignKey(SimCard,blank=True, null=True, related_name="airtime_deposit_transaction_sim_card", on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20,decimal_places=2, default=0)
     reference = models.CharField(max_length=100,unique=True)
     description = models.CharField(max_length=200,null=True,blank=True)
@@ -223,8 +223,8 @@ class AirtimeDepositTransaction(models.Model):
 
 
 class AirtimeDepositLead(models.Model):
-    pocket = models.ForeignKey(Pocket,related_name='airtime_deposit_lead_pocket',blank=True,null=True)
-    sim_card = models.ForeignKey(SimCard,null=True,blank=True, related_name="airtime_deposit_lead_sim_card")
+    pocket = models.ForeignKey(Pocket,related_name='airtime_deposit_lead_pocket',blank=True,null=True, on_delete=models.CASCADE)
+    sim_card = models.ForeignKey(SimCard,null=True,blank=True, related_name="airtime_deposit_lead_sim_card", on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20,decimal_places=2,default=0)
     identifiers = models.ManyToManyField(UniqueIdentifier, related_name="airtime_deposit_identifiers", blank=True)
     transactions = models.ManyToManyField(Transaction, related_name="airtime_deposit_lead_transactions", blank=True)
@@ -241,7 +241,7 @@ class AirtimeDepositLead(models.Model):
 
 
 class BankDepositLead(models.Model):
-    pocket = models.ForeignKey(Pocket,related_name='bank_deposit_lead_pocket')
+    pocket = models.ForeignKey(Pocket,related_name='bank_deposit_lead_pocket', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20,decimal_places=2)
     reference = models.CharField(max_length=150, blank=True, null=True)
     identifiers = models.ManyToManyField(UniqueIdentifier, blank=True)
@@ -257,8 +257,8 @@ class BankDepositLead(models.Model):
         return "%s %s: %s" % (self.pocket, self.reference, self.amount)
 
 class CrowdcoinPaymentLead(models.Model):
-    pocket_from = models.ForeignKey(Pocket, related_name='crowdcoin_payment_lead_pocket_from', null=True,blank=True)
-    pocket_to = models.ForeignKey(Pocket, related_name='crowdcoin_payment_lead_pocket_to')
+    pocket_from = models.ForeignKey(Pocket, related_name='crowdcoin_payment_lead_pocket_from', null=True,blank=True, on_delete=models.CASCADE)
+    pocket_to = models.ForeignKey(Pocket, related_name='crowdcoin_payment_lead_pocket_to', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     identifiers = models.ManyToManyField(UniqueIdentifier, blank=True)
     reference = models.CharField(max_length=150, blank=True, null=True)
@@ -274,14 +274,14 @@ class CrowdcoinPaymentLead(models.Model):
     return_url = models.CharField(max_length=150, blank=True, null=True)
     notify_url = models.CharField(max_length=150, blank=True, null=True)
     cancel_url = models.CharField(max_length=150, blank=True, null=True)   
-    airtime_deposit_lead = models.ForeignKey(AirtimeDepositLead, related_name='airtime_deposit_lead', null=True, blank=True)
+    airtime_deposit_lead = models.ForeignKey(AirtimeDepositLead, related_name='airtime_deposit_lead', null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return "%s to %s : %s" % (self.pocket_from, self.pocket_to, self.amount)
 
 
 class BankPaymentLead(models.Model):
-    pocket = models.ForeignKey(Pocket, related_name='bank_payment_lead_pocket')
+    pocket = models.ForeignKey(Pocket, related_name='bank_payment_lead_pocket', on_delete=models.CASCADE)
     bank = models.CharField(max_length=150, blank=True, null=True)
     branch_code = models.CharField(max_length=150, blank=True, null=True)
     account_no = models.CharField(max_length=150, blank=True, null=True)
@@ -343,13 +343,13 @@ class VoucherPaymentLead(models.Model):
     sender_msisdn = models.CharField(max_length=150, blank=True, null=True)
     recipient_msisdn = models.CharField(max_length=150, blank=True, null=True)
     voucher_code = models.CharField(max_length=150, blank=True, null=True)
-    provider = models.ForeignKey(VoucherProvider, blank=True, null=True)
+    provider = models.ForeignKey(VoucherProvider, blank=True, null=True, on_delete=models.CASCADE)
     security_pin = models.CharField(max_length=150, blank=True, null=True)
     days_valid = models.IntegerField(default=7, blank=True, null=True)
     amount = models.FloatField(default=0,blank=True, null=True)
     currency = models.CharField(max_length=10, blank=True, null=True, default="ZAR", choices=[(x[0], x[1]) for x in CURRENCY_CHOICES])
-    pocket_from = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_from')
-    pocket_to = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_to')
+    pocket_from = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_from', on_delete=models.CASCADE)
+    pocket_to = models.ForeignKey(Pocket, blank=True, null=True, related_name='voucher_payment_lead_pocket_to', on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=100, default="Pending", choices=(("Awaiting Collection", "Awaiting Collection"),
                                                                           ("Collected", "Collected"),
@@ -365,7 +365,7 @@ class VoucherPaymentLead(models.Model):
 
 class Voucher(models.Model):
     voucher_code = models.CharField(max_length=150, blank=True, null=True)
-    provider = models.ForeignKey(VoucherProvider, blank=True, null=True)
+    provider = models.ForeignKey(VoucherProvider, blank=True, null=True, on_delete=models.CASCADE)
     security_pin = models.CharField(max_length=150, blank=True, null=True)
     expiary_date = models.DateTimeField(blank=True, null=True)
     amount = models.FloatField(default=0,blank=True, null=True)
@@ -385,9 +385,9 @@ class Voucher(models.Model):
 
 
 class VoucherExchangeLead(models.Model):
-    pocket = models.ForeignKey(Pocket)
-    old_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='old_voucher')
-    new_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='new_voucher')
+    pocket = models.ForeignKey(Pocket, on_delete=models.CASCADE)
+    old_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='old_voucher', on_delete=models.CASCADE)
+    new_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='new_voucher', on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, null=True)
     updated = models.DateTimeField(auto_now=True, null=True)
     status = models.CharField(max_length=100, default="Pending", choices=(("Awaiting Collection", "Awaiting Collection"),

@@ -59,7 +59,7 @@ class CorsResource(ModelResource):
         try:
             response = super(CorsResource, self).dispatch(*args, **kwargs)
             return self.patch_response(response)
-        except ImmediateHttpResponse, e:
+        except ImmediateHttpResponse as e:
             response = self.patch_response(e.response)
             # re-raise - we could return a response but then anthing wrapping
             # this and expecting an exception would be confused
@@ -138,7 +138,7 @@ class CreateUserResource(MultipartResource,ModelResource):
                         message="Msisdn already exists.")
 
                 registration_response = register_new_user(bundle.data["profile"])
-                if registration_response['status'] is "error":
+                if registration_response['status'] == "error":
                     raise CustomBadRequest(code='registration_error', message=registration_response.get('message'))
 
                 bundle.obj= UserProfile.objects.get(user__username=username)

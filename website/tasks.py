@@ -1,4 +1,4 @@
-from __future__ import absolute_import, unicode_literals
+
 import logging
 import os
 from django.db import transaction
@@ -6,8 +6,8 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.conf import settings
 from datetime import datetime, timedelta, time
-from celery.task.schedules import crontab
-from celery.decorators import periodic_task
+from celery.schedules import crontab
+# from celery.decorators import periodic_task
 from celery import Celery
 import requests
 
@@ -100,7 +100,7 @@ def create_transaction(sender,*args,**kwargs):
                 instance.identifiers.add(transaction_type)
 
                 for identifier in instance.identifiers.all():
-                    print identifier
+                    print(identifier)
                     transaction.identifiers.add(identifier)
 
                 instance.transactions.add(transaction)
@@ -183,7 +183,7 @@ def crowdcoin_payment_transaction(sender,*args,**kwargs):
                         send_sms(msg_debit,profile.msisdn)
                         
                 except Exception as e:
-                    logger.warning(e.message)
+                    logger.warning(e)
 
                 # Notify Merchant URL
                 try:
@@ -196,7 +196,7 @@ def crowdcoin_payment_transaction(sender,*args,**kwargs):
                     merchant_notif_response = requests.post(url= instance.notify_url, data=payload)
                     logger.info(merchant_notif_response.content)
                 except Exception as e:
-                    logger.warning(e.message)               
+                    logger.warning(e)               
 
             elif instance.status in ["Declined", "Canceled"]:
                 for transaction in instance.transactions.all():
@@ -354,7 +354,7 @@ def voucher_payment_transaction(sender,*args,**kwargs):
 @app.task
 def send_outbound_sms(sender,*args,**kwargs):
     from website.utils import send_sms
-    import urllib,json
+    import urllib.request, urllib.parse, urllib.error,json
     def on_commit(): 
         logger.info('Sending SMS') 
         try:  
@@ -366,7 +366,7 @@ def send_outbound_sms(sender,*args,**kwargs):
                     sender="Crowdcoin",
                     username=settings.PANACEA_USER,
                     password=settings.PANACEA_PASSWORD)
-                f = urllib.urlopen(url)
+                f = urllib.request.urlopen(url)
                 s = json.loads(f.read())
                 statusCode = s.get("status")
                 statusString = s.get("message")
@@ -383,7 +383,7 @@ def send_outbound_sms(sender,*args,**kwargs):
              logger.info('SMS not sent') 
         except Exception as e:
             sms.is_dispatched=False
-            logger.warning(e.message)
+            logger.warning(e)
     transaction.on_commit(on_commit)        
 
 
@@ -401,10 +401,10 @@ def update_crowdcoin_airtime_lead(sender,*args,**kwargs):
                     payment_lead.save()
 
             except Exception as e:
-                logger.warning(e.message)
+                logger.warning(e)
     transaction.on_commit(on_commit)
 
-@periodic_task(run_every=(crontab(minute='*/10')), name="allocate_airtime_to_lead", ignore_result=True)
+# @periodic_task(run_every=(crontab(minute='*/10')), name="allocate_airtime_to_lead", ignore_result=True)
 def allocate_airtime_to_lead():
 
     logger.info("Allocating Airtime Deposit Transactions To Airtime Deposit Leads")
@@ -437,7 +437,7 @@ def allocate_airtime_to_lead():
 
     return
 
-@periodic_task(run_every=(crontab(minute='*/15')), name="fetch_remote_sim_transactions", ignore_result=True)
+# @periodic_task(run_every=(crontab(minute='*/15')), name="fetch_remote_sim_transactions", ignore_result=True)
 def fetch_remote_sim_transactions():
     from website.models import SimCard
     from website.utils import process_vodacom_leads

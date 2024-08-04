@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 import mimetypes
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from urllib import quote
+from urllib.parse import quote
 
 
 def construct_whatsapp_url(phone_number, command):
@@ -79,7 +79,7 @@ def send_whatsapp_file(phone_number, file_path, file_type, businessPhoneNumberId
         )
         response.raise_for_status()
 
-        print("WhatsApp message sent with file: {file_path}".format(file_path))
+        print(("WhatsApp message sent with file: {file_path}".format(file_path)))
 
     except requests.exceptions.RequestException as e:
-        print("Error sending WhatsApp message: {e}".format(e))
+        print(("Error sending WhatsApp message: {e}".format(e)))
