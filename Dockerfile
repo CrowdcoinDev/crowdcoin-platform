@@ -10,7 +10,7 @@
 #  ENTRYPOINT ["/code//docker-entrypoint.sh"]
 # EXPOSE 5000
 
-ARG PYTHON_VERSION=2.7
+ARG PYTHON_VERSION=3.10-slim-bullseye
 
 # ARG PYTHON_VERSION=3.10-slim-bullseye
 
