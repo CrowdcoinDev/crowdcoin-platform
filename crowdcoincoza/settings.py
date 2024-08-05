@@ -17,9 +17,13 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
-DEBUG = bool(os.environ.get('DJANGO_DEBUG'))
 
-CROWDCOIN_ENV = os.environ.get('CROWDCOIN_ENV')
+DEBUG = bool(env('DJANGO_DEBUG',default=False))
+
+CROWDCOIN_ENV = os.environ.get('CROWDCOIN_ENV','DEVELOPMENT')
+
+PRODUCTION = True if CROWDCOIN_ENV == 'PRODUCTION' else False
+
 CROWDCOIN_USSD_STRING = "*120*912*87*87#"
 
 ALLOWED_HOSTS = ['*'] if DEBUG else ['localhost', '127.0.0.1', '.fly.dev', '.crowdcoin.co.za']
@@ -206,3 +210,6 @@ OAUTH2_PROVIDER = {
     # 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
     'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
 }
+
+print('DEBUG:',DEBUG)
+print('PRODUCTION:',PRODUCTION)

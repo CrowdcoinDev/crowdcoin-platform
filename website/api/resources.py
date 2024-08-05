@@ -98,6 +98,7 @@ class CreateUserResource(MultipartResource,ModelResource):
         serializer = Serializer(formats=['json'])
 
     def dehydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         if "raw_password" in bundle.data['profile']:
             # Pop out raw_password and validate it
             # This will prevent re-validation because hydrate is called
@@ -149,7 +150,7 @@ class CreateUserResource(MultipartResource,ModelResource):
                 return bundle
 
 
-class UniqueIdentifierResource(CorsResource):
+class UniqueIdentifierResource(ModelResource):
     class Meta:
         authentication = MultiAuthentication(
             InlineBasicAuthentication(),
@@ -164,7 +165,7 @@ class UniqueIdentifierResource(CorsResource):
         excludes = ['is_active']
      
 
-class UserResource(CorsResource):
+class UserResource(ModelResource):
     # We need to store raw password in a virtual field because hydrate method
     # is called multiple times depending on if it's a POST/PUT/PATCH request
     raw_password = fields.CharField(attribute=None, readonly=True, null=True,
@@ -199,12 +200,13 @@ class UserResource(CorsResource):
         return user_profile
 
     def dehydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         bundle.data['key'] = bundle.obj.api_key.key
  
         return bundle
 
  
-class UserProfileResource(CorsResource):
+class UserProfileResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user', full=True)
     identifier = fields.ManyToManyField(UniqueIdentifierResource,'identifier',full=True, null=True,blank=True)
     default_pocket = fields.ForeignKey('website.api.resources.PocketResource', 'default_pocket', full=True)
@@ -236,7 +238,7 @@ class UserProfileResource(CorsResource):
 
 
 
-class NetworkResource(CorsResource):
+class NetworkResource(ModelResource):
     class Meta:
         authentication = MultiAuthentication(
             InlineBasicAuthentication(),
@@ -251,6 +253,7 @@ class NetworkResource(CorsResource):
         excludes = ["daily_limit","airtime_transfer_limit","is_active","created"]
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["name"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -259,7 +262,7 @@ class NetworkResource(CorsResource):
                     message="Must provide {missing_key} when creating a Network."
                         .format(missing_key=field))
 
-class SimCardResource(CorsResource):
+class SimCardResource(ModelResource):
     network = fields.ForeignKey(
         'website.api.resources.NetworkResource',
         'network',
@@ -280,11 +283,13 @@ class SimCardResource(CorsResource):
         excludes = ["balance_month","balance_day","sim_no","status","is_active","created"]
 
     def dehydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         bundle.data['instructions'] = bundle.obj.network.airtime_transfer_instructions.format(
             amount=int(bundle.obj.balance_day), msisdn=bundle.obj.msisdn)
         return bundle
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["network","msisdn","sim_no","balance_day"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -293,7 +298,7 @@ class SimCardResource(CorsResource):
                     message="Must provide {missing_key} when creating a Sim card."
                         .format(missing_key=field))
 
-class TransactionResource(CorsResource):
+class TransactionResource(ModelResource):
     identifiers = fields.ManyToManyField('website.api.resources.UniqueIdentifierResource', 'identifiers', full=True)
     pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=True,null=True)
 
@@ -313,12 +318,14 @@ class TransactionResource(CorsResource):
         ordering = ['datetime']
 
     def dehydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         bundle.data['description'] = []
         for tag in bundle.obj.identifiers.all():
             bundle.data['description'].append(tag.value)
         return bundle
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["pocket","amount","debit"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -327,7 +334,7 @@ class TransactionResource(CorsResource):
                     message="Must provide {missing_key} when creating a Transaction."
                         .format(missing_key=field))
 
-class PocketResource(CorsResource):
+class PocketResource(ModelResource):
     class Meta:
         authentication = MultiAuthentication(
             InlineBasicAuthentication(),
@@ -343,10 +350,12 @@ class PocketResource(CorsResource):
         exclude = []
 
     def dehydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         bundle.data['balance'] = Decimal(bundle.obj.balance())
         return bundle
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["name","tag"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -356,7 +365,7 @@ class PocketResource(CorsResource):
                         .format(missing_key=field))
 
 
-class AirtimeDepositLeadResource(MultipartResource,CorsResource):
+class AirtimeDepositLeadResource(MultipartResource,ModelResource):
     pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=True, null=True)
     sim_card = fields.ForeignKey('website.api.resources.SimCardResource', 'sim_card', full=True, null=True,blank=True)
     #identifiers = fields.ManyToManyField('website.api.resources.UniqueIdentifierResource', 'identifiers', full=True,
@@ -402,7 +411,7 @@ class AirtimeDepositLeadResource(MultipartResource,CorsResource):
 
 
 
-class BankDepositLeadResource(CorsResource):
+class BankDepositLeadResource(ModelResource):
     pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=True)
     identifiers = fields.ManyToManyField('website.api.resources.UniqueIdentifierResource', 'identifiers', full=True,
                                          null=True)
@@ -421,6 +430,7 @@ class BankDepositLeadResource(CorsResource):
         exclude = []
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["pocket","reference","amount"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -430,7 +440,7 @@ class BankDepositLeadResource(CorsResource):
                         .format(missing_key=field))
 
 
-class BankPaymentLeadResource(CorsResource):
+class BankPaymentLeadResource(ModelResource):
     pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=True)
     identifiers = fields.ManyToManyField('website.api.resources.UniqueIdentifierResource', 'identifiers', full=True,
                                          null=True)
@@ -447,6 +457,7 @@ class BankPaymentLeadResource(CorsResource):
         serializer = Serializer(formats=['json'])
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         if bundle.request.method == "POST":
             REQUIRED_FIELDS = ["pocket","bank","amount","account_no"]
             for field in REQUIRED_FIELDS:
@@ -478,7 +489,7 @@ class BankPaymentLeadResource(CorsResource):
                     message="Could not find any Pocket matching {missing_key}.".format(missing_key=bundle.data.get('pocket')))
         return bundle
 
-class CrowdcoinPaymentLeadResource(MultipartResource,CorsResource):
+class CrowdcoinPaymentLeadResource(MultipartResource,ModelResource):
     pocket_from = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_from', full=True, null=True)
     pocket_to = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_to', full=True)
     identifiers = fields.ManyToManyField('website.api.resources.UniqueIdentifierResource', 'identifiers', full=True,null=True)
@@ -499,6 +510,7 @@ class CrowdcoinPaymentLeadResource(MultipartResource,CorsResource):
         exclude = []
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["pocket_to","amount","reference"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -537,7 +549,7 @@ class CrowdcoinPaymentLeadResource(MultipartResource,CorsResource):
         return bundle
 
 
-class SmsInboundResource(MultipartResource,CorsResource):
+class SmsInboundResource(MultipartResource,ModelResource):
     class Meta:
         authentication = MultiAuthentication(
             InlineBasicAuthentication(),
@@ -552,7 +564,7 @@ class SmsInboundResource(MultipartResource,CorsResource):
         exclude = []
 
 
-class SmsOutBoundResource(MultipartResource,CorsResource):
+class SmsOutBoundResource(MultipartResource,ModelResource):
     class Meta:
         authentication = MultiAuthentication(
             InlineBasicAuthentication(),
@@ -567,6 +579,7 @@ class SmsOutBoundResource(MultipartResource,CorsResource):
         exclude = []
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["message","msisdn"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -577,7 +590,7 @@ class SmsOutBoundResource(MultipartResource,CorsResource):
                         )        
         return bundle
 
-class MerchantResource(CorsResource):
+class MerchantResource(ModelResource):
     default_pocket = fields.ForeignKey('website.api.resources.PocketResource', 'default_pocket', full=True,null=True)
     profile = fields.ForeignKey('website.api.resources.UserProfileResource', 'profile', full=True,null=True)
     class Meta:
@@ -596,7 +609,7 @@ class MerchantResource(CorsResource):
         filtering = {'default_pocket':ALL_WITH_RELATIONS,'profile':ALL_WITH_RELATIONS,'display_on_website':ALL}
 
 
-class PromotionResource(CorsResource):
+class PromotionResource(ModelResource):
     referrer = fields.ForeignKey('website.api.resources.PocketResource', 'referrer', full=True,null=True)
 
     class Meta:
@@ -614,7 +627,7 @@ class PromotionResource(CorsResource):
         exclude = []
 
 
-class ClaimedPromotionResource(CorsResource):
+class ClaimedPromotionResource(ModelResource):
     referred = fields.ForeignKey('website.api.resources.PocketResource', 'referred', full=True,null=True)
 
     class Meta:
@@ -631,7 +644,7 @@ class ClaimedPromotionResource(CorsResource):
         exclude = []
 
 
-class VoucherResource(CorsResource):
+class VoucherResource(ModelResource):
     provider = fields.ForeignKey('website.api.resources.VoucherProviderResource', 'provider', full=True, null=True)
 
     class Meta:
@@ -664,6 +677,7 @@ class VoucherResource(CorsResource):
 
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["provider"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -675,10 +689,11 @@ class VoucherResource(CorsResource):
 
         return bundle
 
-class VoucherExchangeLeadResource(CorsResource):
+class VoucherExchangeLeadResource(ModelResource):
     old_voucher = fields.ForeignKey('website.api.resources.VoucherResource', 'old_voucher', full=True)
     new_voucher = fields.ForeignKey('website.api.resources.VoucherResource', 'new_voucher', full=True)
     pocket = fields.ForeignKey('website.api.resources.PocketResource', 'pocket', full=False)
+    user = fields.ForeignKey('website.api.resources.UserResource', 'user', full=True)
 
     class Meta:
         authentication = MultiAuthentication(
@@ -697,6 +712,7 @@ class VoucherExchangeLeadResource(CorsResource):
 
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
         REQUIRED_FIELDS = ["old_voucher","new_voucher","pocket"]
         for field in REQUIRED_FIELDS:
             if field not in bundle.data:
@@ -708,6 +724,7 @@ class VoucherExchangeLeadResource(CorsResource):
 
         try:
             pocket = PocketResource().get_via_uri(bundle.data.get("pocket"))
+            bundle.data['user'] = UserResource().get_resource_uri(bundle.request.user)
         except Exception as e:
             pocket = None
 
@@ -724,7 +741,7 @@ class VoucherExchangeLeadResource(CorsResource):
         return bundle
 
 
-class VoucherProviderResource(CorsResource):
+class VoucherProviderResource(ModelResource):
 
     class Meta:
         authentication = Authentication()
@@ -758,7 +775,7 @@ class VoucherProviderResource(CorsResource):
         return url
 
 
-class VoucherPaymentLeadResource(MultipartResource,CorsResource):
+class VoucherPaymentLeadResource(MultipartResource,ModelResource):
     pocket_to = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_to', full=True, null=True)
     pocket_from = fields.ForeignKey('website.api.resources.PocketResource', 'pocket_from', full=True, null=True)
     provider = fields.ForeignKey('website.api.resources.VoucherProviderResource', 'provider', full=True, null=True)
@@ -779,6 +796,8 @@ class VoucherPaymentLeadResource(MultipartResource,CorsResource):
         exclude = []
 
     def hydrate(self, bundle):
+        bundle.data = bundle.data.copy()
+        bundle.data = bundle.data.copy()
         if bundle.request.method == 'POST':
             REQUIRED_FIELDS = ["pocket_from","amount","recipient_msisdn"]
             for field in REQUIRED_FIELDS:

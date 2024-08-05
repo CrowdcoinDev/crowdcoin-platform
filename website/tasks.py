@@ -267,7 +267,7 @@ def voucher_payment_transaction(sender,*args,**kwargs):
                 commission_tag = UniqueIdentifier.objects.get_or_create(name="Commission_tag",value="Commission "+transaction_tag)[0]
 
                 if instance.status == "Pending":
-                    msg_sender = "(((C) Thank You\n" \
+                    msg_sender = "(((C) Crowdcoin:" \
                         "Your R{amount} Crowdcoin Voucher is on the way.\n" \
                         "Please allow upto 60 minutes while we process your purchase.\n "\
                         "Track your voucher at www.crowdcoin.co.za/verify/{voucher_code} or dial *120*912*87#.".format(amount=instance.amount,voucher_code=instance.voucher_code)                    
@@ -350,18 +350,158 @@ def voucher_payment_transaction(sender,*args,**kwargs):
 
     transaction.on_commit(on_commit)
 
+@app.task
+def voucher_exchange_transaction(sender,*args,**kwargs):
+    from website.models import Transaction,UniqueIdentifier,Voucher
+    from website.utils import send_sms
+    def on_commit():
+        instance = kwargs.get('instance')
+        logger.info(instance.uid)
+        if instance:
+            # if instance.voucher_code in [None, '']: #or len(instance.voucher_code) != 13:
+            #     voucher_code = get_random_string(length=13,allowed_chars='123456789')
+            #     while VoucherPaymentLead.objects.filter(voucher_code=voucher_code).exists():
+            #         voucher_code = get_random_string(length=13,allowed_chars='123456789')
+            #     instance.voucher_code = voucher_code
+            #     instance.save()
+            # # if instance.security_pin in [None, '']:
+            #     instance.security_pin = get_random_string(length=4,allowed_chars='123456789')
+            #     instance.save()
+            if instance.status in ["Pending","Awaiting Collection","Collected"]:
+                transaction_tag = "voucher exchange #{id}".format(id=instance.id)
+
+
+                sender_tag = UniqueIdentifier.objects.get_or_create(name="Sender_tag",value=transaction_tag)[0]
+                reciever_tag = UniqueIdentifier.objects.get_or_create(name="Reciever_tag",value=transaction_tag)[0]
+                fee_tag = UniqueIdentifier.objects.get_or_create(name="Fee_tag",value="Fee "+transaction_tag)[0]
+                commission_tag = UniqueIdentifier.objects.get_or_create(name="Commission_tag",value="Commission "+transaction_tag)[0]
+
+
+                if instance.status == "Pending":
+                    total_fees = instance.new_voucher.provider.fee + instance.new_voucher.provider.comission
+                    new_voucher_value = float(instance.old_voucher.amount) - total_fees
+                    instance.new_voucher.amount = new_voucher_value
+                    instance.new_voucher.save()
+
+                    msg_sender = "(((C) Voucher Exchange Started.\n" \
+                        "From: {old_provider}\n" \
+                        "Amount: {old_amount}\n\n" \
+                        "To: {new_provider}\n" \
+                        "Amount: {new_amount}\n" \
+                        "Track at crowdcoin.co.za/exchange/{uid}\n" \
+                        "".format(
+                            old_provider=instance.old_voucher.provider.name,
+                            old_amount=instance.old_voucher.amount,
+                            new_provider=instance.new_voucher.provider.name,
+                            new_amount=instance.new_voucher.amount,
+                            uid=instance.uid
+                            )          
+                    send_sms(msg_sender,instance.user.username)
+
+
+
+                if instance.status == "Awaiting Collection":
+
+                    Transaction.objects.filter(identifiers=sender_tag).delete()
+                    Transaction.objects.filter(identifiers=fee_tag).delete()
+
+                    # transaction_from = Transaction.objects.create(
+                    #     debit=True,
+                    #     pocket=instance.pocket,
+                    #     amount=instance.new_voucher.amount,
+                    #     datetime=datetime.now()
+                    # )
+                    # logger.info(instance.pocket.voucher_sending_fee.strip('%'))
+                    total_fees = instance.new_voucher.provider.fee + instance.new_voucher.provider.comission
+                    # fee_from_amount = float(instance.new_voucher.amount) * float(instance.pocket.voucher_sending_fee.strip('%'))/100 if '%' in instance.pocket.voucher_sending_fee else float(instance.pocket.voucher_sending_fee)
+                    fee_from_amount = abs(total_fees)
+                    logger.info("Fee %s"%fee_from_amount)
+                    fee_from = Transaction.objects.create(
+                        debit=True,
+                        pocket=instance.pocket,
+                        amount=fee_from_amount,
+                        datetime=datetime.now()
+                    )
+                    
+                    fee_from.identifiers.add(fee_tag)                    
+                    # transaction_from.identifiers.add(sender_tag)                    
+                    #Send Voucher + Pin to recipient
+                    # msg_recipient = "(((C) " \
+                    #     "R{amount} Crowdcoin Money Transfer\n" \
+                    #     "Voucher Code: {voucher_code}\n" \
+                    #     "Security PIN: {voucher_security_pin}\n\nVisit http://help.crowdcoin.za for help.".format(amount=instance.amount,
+                    #         voucher_security_pin='Ask {sender_name}'.format(sender_name=instance.sender_name),
+                    #         voucher_code=instance.voucher_code)
+                                                                                          
+                    # send_sms(msg_recipient,instance.recipient_msisdn)
+
+                    msg_sender = "(((C) Voucher Exchange Complete.\n" \
+                        "Provider: {provider}\n" \
+                        "Amount: {amount}\n" \
+                        "Code: {voucher_code}\n" \
+                        "Pin: {security_pin}\n" \
+                        "Expires: {expiary}\n" \
+                        "\nContact {company} for help.".format(
+                            provider=instance.new_voucher.provider.name,
+                            amount=instance.new_voucher.amount,
+                            voucher_code=instance.new_voucher.voucher_code,
+                            security_pin=instance.new_voucher.security_pin,
+                            expiary=instance.new_voucher.expiary_date,
+                            company=instance.new_voucher.provider.company if instance.new_voucher.provider.company else 'Crowdcoin',
+                            # website=instance.new_voucher.provider.website if instance.new_voucher.provider.website else 'https://help.crowdcoin.co.za',
+                            )                    
+                    send_sms(msg_sender,instance.user.username)
+
+                if instance.status == "Collected":
+                    Transaction.objects.filter(identifiers=reciever_tag).delete()
+                    Transaction.objects.filter(identifiers=commission_tag).delete()
+
+                    transaction_to = Transaction.objects.create(
+                        debit=False,
+                        pocket=instance.pocket_to,
+                        amount=instance.amount,
+                        datetime=datetime.now()
+                    )
+                    fee_to_amount = float(instance.amount) * float(instance.pocket_to.voucher_receiving_fee.strip('%'))/100 if '%' in instance.pocket_to.voucher_receiving_fee else float(instance.pocket_to.voucher_receiving_fee)
+                    fee_to_amount = abs(fee_to_amount)
+                    logger.info("Fee %s"%fee_to_amount)
+                    fee_to = Transaction.objects.create(
+                        debit=False,
+                        pocket=instance.pocket_to,
+                        amount=fee_to_amount,
+                        datetime=datetime.now()
+                    )
+
+                    fee_to.identifiers.add(commission_tag)                       
+                    instance.active = False
+                    transaction_to.identifiers.add(reciever_tag)
+
+                    #Send redeemption sms
+
+
+            elif instance.status in ["Declined", "Canceled"]:
+                for transaction in instance.transactions.all():
+                    transaction.active = False
+                    transaction.save()
+
+
+    transaction.on_commit(on_commit)
+
 
 @app.task
 def send_outbound_sms(sender,*args,**kwargs):
     from website.utils import send_sms
     import urllib.request, urllib.parse, urllib.error,json
+    from django.conf import settings
     def on_commit(): 
         logger.info('Sending SMS') 
         try:  
             sms = kwargs.get('instance')
-            if sms and not sms.is_dispatched:
+            
+            if settings.PRODUCTION and not sms.is_dispatched:
                 
-                url = "https://api.panaceamobile.com/json?username={username}&password={password}&text={body}&to={recipient}&action=message_send&from={sender}".format(body=sms.message,
+                url = "https://api.panaceamobile.com/json?username={username}&password={password}&text={body}&to={recipient}&action=message_send&from={sender}".format(
+                    body=urllib.parse.quote(sms.message),
                     recipient=sms.msisdn,
                     sender="Crowdcoin",
                     username=settings.PANACEA_USER,

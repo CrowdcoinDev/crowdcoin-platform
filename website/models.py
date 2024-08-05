@@ -44,7 +44,7 @@ class UserProfile(models.Model):
     pockets = models.ManyToManyField('Pocket', related_name="user_profile_pocket",blank=True)
     default_pocket = models.ForeignKey('Pocket',related_name="user_profile_default_pocket",null=True,blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s"% (self.user.username, self.default_pocket)
 
 class Merchant(models.Model):
@@ -74,7 +74,7 @@ class Merchant(models.Model):
     active = models.BooleanField(default=True)
     display_on_website = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s"% (self.profile.user.username, self.trading_name)
 
 
@@ -88,7 +88,7 @@ class Promotion(models.Model):
     available = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s" % (self.code, self.description)
 
 
@@ -100,7 +100,7 @@ class ClaimedPromotion(models.Model):
     datetime = models.DateTimeField(auto_created=True,null=True,blank=True)
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s" % (self.promotion.code, self.referrer.tag)
         
 
@@ -113,7 +113,7 @@ class Transaction(models.Model):
     datetime = models.DateTimeField(auto_created=True,null=True,blank=True)
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s" % (self.amount, self.datetime)
 
 
@@ -127,7 +127,7 @@ class Pocket(models.Model):
     payout_hold_days = models.IntegerField(default=7)
     payout_monthly_limit = models.DecimalField(decimal_places=2, max_digits=20, default=10000)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s" % self.name
 
     def balance(self):
@@ -155,7 +155,7 @@ class SmsInbound(models.Model):
     is_read = models.BooleanField(default=False,blank=True)
     replied = models.BooleanField(default=False,blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.message
 
 class SmsOutBound(models.Model):
@@ -168,7 +168,7 @@ class SmsOutBound(models.Model):
     source_id = models.CharField(max_length=100,blank=True,null=True)
     is_dispatched = models.BooleanField(default=False,blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.message
 
 
@@ -182,7 +182,7 @@ class Network(models.Model):
     airtime_transfer_instructions = models.TextField(max_length=500,blank=True,null=True)
     deposit_denominations = models.CharField(max_length=200,blank=True,null=True,default="5,10")
     deposit_fee = models.FloatField(default=10,null=True,blank=True)
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -202,7 +202,7 @@ class SimCard(models.Model):
                                                                    ("Dispatch","Dispatch"),
                                                                    ("Circulating","Circulating")))
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s:  %s  bal:R %s" % (self.network,self.msisdn,self.balance_day)
 
 
@@ -211,7 +211,7 @@ class UniqueIdentifier(models.Model):
     value = models.CharField(max_length=150,blank=True,null=True)
     is_active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s" % (self.name, self.value)
 
 
@@ -224,7 +224,7 @@ class AirtimeDepositTransaction(models.Model):
     created = models.DateTimeField(null=True,blank=True)
     active = models.BooleanField(default=False, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.reference        
 
 
@@ -242,7 +242,7 @@ class AirtimeDepositLead(models.Model):
                                                                           ("Canceled", "Canceled")))
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s" % (self.status, self.amount)
 
 
@@ -259,7 +259,7 @@ class BankDepositLead(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s %s: %s" % (self.pocket, self.reference, self.amount)
 
 class CrowdcoinPaymentLead(models.Model):
@@ -282,7 +282,7 @@ class CrowdcoinPaymentLead(models.Model):
     cancel_url = models.CharField(max_length=150, blank=True, null=True)   
     airtime_deposit_lead = models.ForeignKey(AirtimeDepositLead, related_name='airtime_deposit_lead', null=True, blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s to %s : %s" % (self.pocket_from, self.pocket_to, self.amount)
 
 
@@ -302,7 +302,7 @@ class BankPaymentLead(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s to %s : %s" % (self.pocket, self.reference, self.amount)
 
 
@@ -325,7 +325,7 @@ class VoucherProvider(models.Model):
     active = models.BooleanField(default=True)
     slug = models.SlugField(max_length=255, null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s %s" % (self.name, self.active, self.currency)
 
 
@@ -364,7 +364,7 @@ class VoucherPaymentLead(models.Model):
                                                                           ("Canceled", "Canceled")))
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s %s" % (self.voucher_code, self.amount, self.currency)
 
 
@@ -385,12 +385,13 @@ class Voucher(models.Model):
                                                                           ("Canceled", "Canceled")))
     active = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s %s" % (self.voucher_code, self.amount, self.currency)
 
 
 
 class VoucherExchangeLead(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,null=True, on_delete=models.SET_NULL)
     pocket = models.ForeignKey(Pocket, on_delete=models.CASCADE)
     old_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='old_voucher', on_delete=models.CASCADE)
     new_voucher = models.ForeignKey(Voucher, blank=True, null=True, related_name='new_voucher', on_delete=models.CASCADE)
@@ -405,7 +406,7 @@ class VoucherExchangeLead(models.Model):
     transactions = models.ManyToManyField(Transaction, blank=True)
     uid = models.UUIDField(default=uuid.uuid4, editable=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s : %s %s" % (self.status, self.old_voucher, self.new_voucher)
 
     def save(self, *args, **kwargs):
@@ -429,7 +430,7 @@ class SmsTemplate(models.Model):
     description = models.CharField(max_length=150, blank=True, null=True)
     content = models.TextField(max_length=160,blank=True,null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s" % (self.name,self.description)
 
 
@@ -439,7 +440,7 @@ class OneTimePin(models.Model):
     created = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=False, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.pin        
 
 
@@ -458,7 +459,8 @@ def signals_import():
     from website.utils import send_transaction_sms
     from website.tasks import post_save_verifyid,\
         create_transaction,crowdcoin_payment_transaction,\
-        bank_payment_transaction,voucher_payment_transaction,send_outbound_sms,update_crowdcoin_airtime_lead
+        bank_payment_transaction,voucher_payment_transaction,send_outbound_sms,update_crowdcoin_airtime_lead,\
+        voucher_exchange_transaction
 
     models.signals.post_save.connect(create_api_key, sender=User)
     models.signals.post_save.connect(send_transaction_sms, sender=Transaction,weak=True)
@@ -468,6 +470,7 @@ def signals_import():
     models.signals.post_save.connect(update_crowdcoin_airtime_lead, sender=AirtimeDepositLead, weak=False)
     models.signals.post_save.connect(bank_payment_transaction, sender=BankPaymentLead, weak=False)
     models.signals.post_save.connect(voucher_payment_transaction, sender=VoucherPaymentLead, weak=False)
+    models.signals.post_save.connect(voucher_exchange_transaction, sender=VoucherExchangeLead, weak=False)
     models.signals.post_save.connect(send_outbound_sms, sender=SmsOutBound, weak=False)
     # models.signals.m2m_changed.connect(send_transaction_sms, sender=Transaction.identifiers)
 
