@@ -8,6 +8,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf import settings
 from tastypie.api import Api
 from website.api.resources import *
+from website.ussd import ussd_view
 
 admin.autodiscover()
 admin.site.site_header = 'Crowdcoin Dashboard'
@@ -51,7 +52,7 @@ urlpatterns = [
     path(f'{api_prefix}export/', export_funds_csv),
     path(f'{api_prefix}login/', api_login),
     path(f'{api_prefix}register_merchant/', api_merchant_registration),
-    path(f'{api_prefix}ussd/', ussdView, name='ussd'),
+    path(f'{api_prefix}ussd/', ussd_view, name='ussd'),
     path(f'{api_prefix}otp/', get_otp_view, name='get_otp'),
     path('loaderio-b193a2f576f0426fef58ef4dbe597971/', loaderio),
     # path('sso/', include('freshdesk.urls')),

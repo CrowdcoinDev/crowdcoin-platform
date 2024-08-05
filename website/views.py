@@ -48,197 +48,197 @@ def support_ticket_create(request):
     return HttpResponse(response)
 
 
-def ussdView(request):
-    try:
-        logger.debug(request.GET)
-        msisdn = request.GET.get('ussd_msisdn')
-        node_name = request.GET.get("ussd_node_name")
-        network = request.GET.get("ussd_network_name")
-        ussd_request = request.GET.get("ussd_request")
-        # try:
-        #     ussd_request_args = ussd_request.strip("#").split(settings.CROWDCOIN_USSD_STRING[:-1],1)[1][1:].split("*")
-        # except Exception as e:
-        #     logger.debug(e)
-        #     ussd_request_args = ussd_request
-        # logger.debug(settings.CROWDCOIN_USSD_STRING)
-        # logger.debug(ussd_request)
-        # logger.debug(ussd_request_args)
-        #Replace country code
-        msisdn = '0'+str(msisdn[2:])
-        user = User.objects.get_or_create(username=msisdn)[0]
-        userProfile = UserProfile.objects.get_or_create(user=user, msisdn=user.username)[0]
+# def ussdView(request):
+#     try:
+#         logger.debug(request.GET)
+#         msisdn = request.GET.get('ussd_msisdn')
+#         node_name = request.GET.get("ussd_node_name")
+#         network = request.GET.get("ussd_network_name")
+#         ussd_request = request.GET.get("ussd_request")
+#         # try:
+#         #     ussd_request_args = ussd_request.strip("#").split(settings.CROWDCOIN_USSD_STRING[:-1],1)[1][1:].split("*")
+#         # except Exception as e:
+#         #     logger.debug(e)
+#         #     ussd_request_args = ussd_request
+#         # logger.debug(settings.CROWDCOIN_USSD_STRING)
+#         # logger.debug(ussd_request)
+#         # logger.debug(ussd_request_args)
+#         #Replace country code
+#         msisdn = '0'+str(msisdn[2:])
+#         user = User.objects.get_or_create(username=msisdn)[0]
+#         userProfile = UserProfile.objects.get_or_create(user=user, msisdn=user.username)[0]
 
 
-        if node_name == "Menu":
-            logger.debug("Called Menu")
-            merchant_id = None
-            if len(ussd_request_args) > 1:
-                merchant_id = int(ussd_request_args[0])
-                amount = int(ussd_request_args[1])
+#         if node_name == "Menu":
+#             logger.debug("Called Menu")
+#             merchant_id = None
+#             if len(ussd_request_args) > 1:
+#                 merchant_id = int(ussd_request_args[0])
+#                 amount = int(ussd_request_args[1])
 
-                logger.debug(merchant_id)
-                logger.debug(amount)
-
-
-
-            if merchant_id and Merchant.objects.filter(id=merchant_id).exists():
-                merchant = Merchant.objects.get(id=merchant_id)
-                response = "(((C) {merchant_name} \n\n" \
-                           "You are about to pay  R {amount} using airtime.\n" \
-                           "Please enter your reference:\n" \
-                           "Example: INV123\n\n" \
-                           "0. Help.\n".format(merchant_name=merchant.trading_name,amount=amount)
-
-            else:
-                merchant = Merchant.objects.all()
-                response="(((C) Crowdcoin\n\n" \
-                         "1. Balance\n" \
-                         "2. Top Up\n" \
-                         "3. History\n" \
-                         "4. Reset Password\n" \
-                         "0. Help\n" 
-            return HttpResponse(response)
-
-        if str(node_name).startswith("FindMerchantResults"):
-            logger.debug("Called Find Merchant Results")
-            if Merchant.objects.filter(trading_name__icontains=request.GET.get("ussd_response_FindMerchantKeyword")).exists():
-                merchants = Merchant.objects.filter(trading_name__icontains=request.GET.get("ussd_response_FindMerchantKeyword"))
-                merchants_string = "(((C) Merchants Found\n\n"
-                if len(merchants)>=1:
-                    for merchant in merchants:
-                        merchants_string += "{merchant_id}={merchant_name}\n".format(merchant_id=merchant.id,merchant_name=merchant.trading_name)
-                    response = merchants_string
-
-                else:
-                    response = "You do not have any pockets linked to your account"
-            else:
-                response = "(((C) Crowdcoin\n\n" \
-                           "Use of service subject to Ts & Cs avaible at http://www.crowdcoin.co.za/legals.\n\n" \
-                           "7. Join Crowdcoin for Business"
-            return HttpResponse(response)                 
-
-        if node_name == "Mini_Statement":
-            profile = UserProfile.objects.get(user__username=msisdn)
-            pocket = profile.pockets.filter(active=True).order_by('created')[int(request.GET.get("ussd_response_Active_Pocket_"+node_name))-1]
-            transactions = Transaction.objects.filter(pocket=pocket,active=True).order_by('-datetime')[:10]
-            transactions_tracker = 0
-            transactions_string = "(((C) Mini Statement\n\n"
-            if len(transactions)>0:
-                for transaction in transactions:
-                    transactions_tracker += 1
-                    if transaction.debit:
-                        credit_tag="-"
-                    else:
-                        credit_tag="+"
-                    description = transaction.identifiers.get(name='transaction_tag').value
-                    if description.startswith('voucher_payment'):
-                        voucher = VoucherPaymentLead.objects.get(voucher_code =description.strip('voucher_payment_'))
-                        if not voucher.recipient_msisdn:
-                            description = "{voucher_code} - Guest".format(voucher_code=voucher.voucher_code)
-                        else:
-                            description = "{voucher_code} - {recipient_msisdn}"\
-                                .format(voucher_code=voucher.voucher_code,
-                                        recipient_msisdn=voucher.recipient_msisdn)
-                    transactions_string += "{id}.{tag}R{amount} - {description}\n"\
-                        .format(id=transactions_tracker,
-                                tag=credit_tag,
-                                amount=transaction.amount,
-                                description=description)
-                response = transactions_string
-            else:
-                response = "You have no transactions."
-            return HttpResponse(response)
+#                 logger.debug(merchant_id)
+#                 logger.debug(amount)
 
 
-        if node_name == "Balance":
-            logger.info(msisdn)
-            profile = UserProfile.objects.get(user__username=msisdn)
-            pocket = profile.default_pocket #profile.pockets.filter(active=True).order_by('created')[int(request.GET.get("ussd_response_Active_Pocket_"+node_name,profile.default_pocket))-1]
-            response = "(((C) {tag}\n\n" \
-                       "Balance: {balance} Crowdcoins".format(balance=pocket.balance(),tag=pocket.tag)
-            return HttpResponse(response)
+
+#             if merchant_id and Merchant.objects.filter(id=merchant_id).exists():
+#                 merchant = Merchant.objects.get(id=merchant_id)
+#                 response = "(((C) {merchant_name} \n\n" \
+#                            "You are about to pay  R {amount} using airtime.\n" \
+#                            "Please enter your reference:\n" \
+#                            "Example: INV123\n\n" \
+#                            "0. Help.\n".format(merchant_name=merchant.trading_name,amount=amount)
+
+#             else:
+#                 merchant = Merchant.objects.all()
+#                 response="(((C) Crowdcoin\n\n" \
+#                          "1. Balance\n" \
+#                          "2. Top Up\n" \
+#                          "3. History\n" \
+#                          "4. Reset Password\n" \
+#                          "0. Help\n" 
+#             return HttpResponse(response)
+
+#         if str(node_name).startswith("FindMerchantResults"):
+#             logger.debug("Called Find Merchant Results")
+#             if Merchant.objects.filter(trading_name__icontains=request.GET.get("ussd_response_FindMerchantKeyword")).exists():
+#                 merchants = Merchant.objects.filter(trading_name__icontains=request.GET.get("ussd_response_FindMerchantKeyword"))
+#                 merchants_string = "(((C) Merchants Found\n\n"
+#                 if len(merchants)>=1:
+#                     for merchant in merchants:
+#                         merchants_string += "{merchant_id}={merchant_name}\n".format(merchant_id=merchant.id,merchant_name=merchant.trading_name)
+#                     response = merchants_string
+
+#                 else:
+#                     response = "You do not have any pockets linked to your account"
+#             else:
+#                 response = "(((C) Crowdcoin\n\n" \
+#                            "Use of service subject to Ts & Cs avaible at http://www.crowdcoin.co.za/legals.\n\n" \
+#                            "7. Join Crowdcoin for Business"
+#             return HttpResponse(response)                 
+
+#         if node_name == "Mini_Statement":
+#             profile = UserProfile.objects.get(user__username=msisdn)
+#             pocket = profile.pockets.filter(active=True).order_by('created')[int(request.GET.get("ussd_response_Active_Pocket_"+node_name))-1]
+#             transactions = Transaction.objects.filter(pocket=pocket,active=True).order_by('-datetime')[:10]
+#             transactions_tracker = 0
+#             transactions_string = "(((C) Mini Statement\n\n"
+#             if len(transactions)>0:
+#                 for transaction in transactions:
+#                     transactions_tracker += 1
+#                     if transaction.debit:
+#                         credit_tag="-"
+#                     else:
+#                         credit_tag="+"
+#                     description = transaction.identifiers.get(name='transaction_tag').value
+#                     if description.startswith('voucher_payment'):
+#                         voucher = VoucherPaymentLead.objects.get(voucher_code =description.strip('voucher_payment_'))
+#                         if not voucher.recipient_msisdn:
+#                             description = "{voucher_code} - Guest".format(voucher_code=voucher.voucher_code)
+#                         else:
+#                             description = "{voucher_code} - {recipient_msisdn}"\
+#                                 .format(voucher_code=voucher.voucher_code,
+#                                         recipient_msisdn=voucher.recipient_msisdn)
+#                     transactions_string += "{id}.{tag}R{amount} - {description}\n"\
+#                         .format(id=transactions_tracker,
+#                                 tag=credit_tag,
+#                                 amount=transaction.amount,
+#                                 description=description)
+#                 response = transactions_string
+#             else:
+#                 response = "You have no transactions."
+#             return HttpResponse(response)
 
 
-        if node_name == "Redeem_Voucher":
-            profile = UserProfile.objects.get(user__username=msisdn)
-            pocket_to = pocket = profile.default_pocket
-            voucher_code = request.GET.get("ussd_response_Voucher_Code")
-            voucher_provider = "Crowdcoin" if int(request.GET.get("ussd_response_Voucher_Provider")) == 1 else "Vodacom"
+#         if node_name == "Balance":
+#             logger.info(msisdn)
+#             profile = UserProfile.objects.get(user__username=msisdn)
+#             pocket = profile.default_pocket #profile.pockets.filter(active=True).order_by('created')[int(request.GET.get("ussd_response_Active_Pocket_"+node_name,profile.default_pocket))-1]
+#             response = "(((C) {tag}\n\n" \
+#                        "Balance: {balance} Crowdcoins".format(balance=pocket.balance(),tag=pocket.tag)
+#             return HttpResponse(response)
 
-            if voucher_provider == 'Crowdcoin':
-                if VoucherPaymentLead.objects.filter(active=True,voucher_code=voucher_code):
-                    voucher = VoucherPaymentLead.objects.get(active=True,voucher_code=voucher_code)
-                    if voucher.status in ["Pending","Awaiting Collection"]:
-                        voucher.pocket_to = pocket_to
-                        voucher.active = False
-                        voucher.status = "Collected"
-                        voucher.provider = voucher_provider
-                        voucher.save()
-                        response = "Thank you!\n{amount} Crowdcoin credited to {tag}.".format(amount=voucher.amount,tag=voucher.pocket_to.tag)
 
-                        #Send redeemption sms
-                        msg = "Hi {full_names}\n" \
-                              "{pocket_name} has been credited with {amount} Crowdcoins.\nBalance:{balance} ".format(pocket_name=pocket_to.tag,
-                                                                                                 amount=voucher.amount,
-                                                                                                 full_names=profile.user.get_short_name(),
-                                                                                                 balance=pocket_to.balance())
-                        send_sms(msg,profile.msisdn)
+#         if node_name == "Redeem_Voucher":
+#             profile = UserProfile.objects.get(user__username=msisdn)
+#             pocket_to = pocket = profile.default_pocket
+#             voucher_code = request.GET.get("ussd_response_Voucher_Code")
+#             voucher_provider = "Crowdcoin" if int(request.GET.get("ussd_response_Voucher_Provider")) == 1 else "Vodacom"
 
-                    else:
+#             if voucher_provider == 'Crowdcoin':
+#                 if VoucherPaymentLead.objects.filter(active=True,voucher_code=voucher_code):
+#                     voucher = VoucherPaymentLead.objects.get(active=True,voucher_code=voucher_code)
+#                     if voucher.status in ["Pending","Awaiting Collection"]:
+#                         voucher.pocket_to = pocket_to
+#                         voucher.active = False
+#                         voucher.status = "Collected"
+#                         voucher.provider = voucher_provider
+#                         voucher.save()
+#                         response = "Thank you!\n{amount} Crowdcoin credited to {tag}.".format(amount=voucher.amount,tag=voucher.pocket_to.tag)
 
-                        response = "You have entered an incorrect Voucher Security Pin."
-                else:
-                    if VoucherPaymentLead.objects.filter(active=False, voucher_code=voucher_code):
-                        if VoucherPaymentLead.objects.get(active=False,
-                                                          voucher_code=voucher_code).pocket_to in profile.pockets.all():
-                            response = "You have already redeemed this voucher"
-                        else:
-                            response = "The provided Voucher has already been redeemed"
-                    else:
-                        response = "You have entered an incorrect Voucher number."
-            else:
-                voucher = VoucherPaymentLead.objects.get_or_create(active=True,
-                    voucher_code=voucher_code,
-                    provider=voucher_provider,
-                    pocket_to=pocket_to
-                    )[0]
-                response = "Please wait while we convert your {provider} voucher to a Crowdcoin voucher.".format(provider=voucher_provider)
-            return HttpResponse(response)
+#                         #Send redeemption sms
+#                         msg = "Hi {full_names}\n" \
+#                               "{pocket_name} has been credited with {amount} Crowdcoins.\nBalance:{balance} ".format(pocket_name=pocket_to.tag,
+#                                                                                                  amount=voucher.amount,
+#                                                                                                  full_names=profile.user.get_short_name(),
+#                                                                                                  balance=pocket_to.balance())
+#                         send_sms(msg,profile.msisdn)
 
-        if node_name == "Generate_Voucher":
-            profile = UserProfile.objects.get(user__username=msisdn)
-            pocket_from = profile.default_pocket
-            amount = float(request.GET.get("ussd_response_Voucher_Amount"))
-            if pocket_from.balance() >= amount and amount >= 0 :
-                voucher = VoucherPaymentLead.objects.create(active=True,
-                                                            pocket_from=pocket_from,
-                                                            amount=amount,
-                                                            sender_msisdn=msisdn,
-                                                            recipient_msisdn=msisdn,
-                                                            status='Awaiting Collection'
-                                                            )
-                response = "(((C) Voucher Details\n\n" \
-                    "Amount:{amount}\n" \
-                    "Voucher:{voucher_code}\n" \
-                    "Balance:{pocket_balance} \n".format(amount=voucher.amount,pocket_balance=pocket_from.balance(),voucher_code=voucher.voucher_code)
+#                     else:
 
-            else:
-                if amount>0:
-                    response = "Insufficient balance.\nAvailable Balance: {balance} (((c)".format(balance=pocket_from.balance())
-                else:
-                    response = "You entered an incorrect amount."
+#                         response = "You have entered an incorrect Voucher Security Pin."
+#                 else:
+#                     if VoucherPaymentLead.objects.filter(active=False, voucher_code=voucher_code):
+#                         if VoucherPaymentLead.objects.get(active=False,
+#                                                           voucher_code=voucher_code).pocket_to in profile.pockets.all():
+#                             response = "You have already redeemed this voucher"
+#                         else:
+#                             response = "The provided Voucher has already been redeemed"
+#                     else:
+#                         response = "You have entered an incorrect Voucher number."
+#             else:
+#                 voucher = VoucherPaymentLead.objects.get_or_create(active=True,
+#                     voucher_code=voucher_code,
+#                     provider=voucher_provider,
+#                     pocket_to=pocket_to
+#                     )[0]
+#                 response = "Please wait while we convert your {provider} voucher to a Crowdcoin voucher.".format(provider=voucher_provider)
+#             return HttpResponse(response)
 
-            return HttpResponse(response)
+#         if node_name == "Generate_Voucher":
+#             profile = UserProfile.objects.get(user__username=msisdn)
+#             pocket_from = profile.default_pocket
+#             amount = float(request.GET.get("ussd_response_Voucher_Amount"))
+#             if pocket_from.balance() >= amount and amount >= 0 :
+#                 voucher = VoucherPaymentLead.objects.create(active=True,
+#                                                             pocket_from=pocket_from,
+#                                                             amount=amount,
+#                                                             sender_msisdn=msisdn,
+#                                                             recipient_msisdn=msisdn,
+#                                                             status='Awaiting Collection'
+#                                                             )
+#                 response = "(((C) Voucher Details\n\n" \
+#                     "Amount:{amount}\n" \
+#                     "Voucher:{voucher_code}\n" \
+#                     "Balance:{pocket_balance} \n".format(amount=voucher.amount,pocket_balance=pocket_from.balance(),voucher_code=voucher.voucher_code)
 
-        else:
-            response = "No option selected"
-            return HttpResponse(response, status=200)
+#             else:
+#                 if amount>0:
+#                     response = "Insufficient balance.\nAvailable Balance: {balance} (((c)".format(balance=pocket_from.balance())
+#                 else:
+#                     response = "You entered an incorrect amount."
 
-    except Exception as e:
-        logger.exception(e)
-        response="An error occurred. Please contact support\n" \
-                 "0) Menu"
-        return HttpResponse(response)
+#             return HttpResponse(response)
+
+#         else:
+#             response = "No option selected"
+#             return HttpResponse(response, status=200)
+
+#     except Exception as e:
+#         logger.exception(e)
+#         response="An error occurred. Please contact support\n" \
+#                  "0) Menu"
+#         return HttpResponse(response)
 
 
 def create_funds_transaction_api(request):
