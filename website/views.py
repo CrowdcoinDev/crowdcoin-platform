@@ -72,12 +72,12 @@ def ussdView(request):
         if node_name == "Menu":
             logger.debug("Called Menu")
             merchant_id = None
-            # if len(ussd_request_args) > 1:
-            #     merchant_id = int(ussd_request_args[0])
-            #     amount = int(ussd_request_args[1])
+            if len(ussd_request_args) > 1:
+                merchant_id = int(ussd_request_args[0])
+                amount = int(ussd_request_args[1])
 
-                # logger.debug(merchant_id)
-                # logger.debug(amount)
+                logger.debug(merchant_id)
+                logger.debug(amount)
 
 
 
@@ -92,8 +92,10 @@ def ussdView(request):
             else:
                 merchant = Merchant.objects.all()
                 response="(((C) Crowdcoin\n\n" \
-                         "You have entered an invalid Merchant ID.\n\n" \
-                         "1. Find Merchant ID\n" \
+                         "1. Balance\n" \
+                         "2. Top Up\n" \
+                         "3. History\n" \
+                         "4. Reset Password\n" \
                          "0. Help\n" 
             return HttpResponse(response)
 
