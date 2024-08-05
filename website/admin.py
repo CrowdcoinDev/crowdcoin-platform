@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
 from website.models import *
 from website.tasks import create_transaction
 import logging
@@ -80,7 +82,7 @@ class VoucherExchangeLeadAdmin(admin.ModelAdmin):
     list_display = ["status", "old_voucher", "new_voucher", "created"]
     list_filter = ['created',"status"]
 
-
+admin.site.register(User, UserAdmin)
 admin.site.register(SmsOutBound)
 admin.site.register(SmsInbound)
 admin.site.register(UserProfile,UserProfileAdmin)

@@ -39,6 +39,7 @@ v1_api.register(SmsOutBoundResource())
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(v1_api.urls)),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path(f'{api_prefix}whatsapp/', include('whatsapp_bot.urls')),
     re_path(r'^static/(?P<path>.*)$', static_serve, {'document_root': settings.STATIC_ROOT}),
     re_path(r'^media/(?P<file_path>.*)', MediaView),
