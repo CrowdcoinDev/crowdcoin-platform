@@ -41,9 +41,14 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'tastypie',
     'whatsapp_bot',
+    'oauth2_provider',
+    'corsheaders',
 ]
 
 SITE_ID = 1
+
+AUTH_USER_MODEL = 'website.User'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MIDDLEWARE = [
@@ -185,3 +190,19 @@ TIM_KEY = os.environ.get('TIM_KEY')
 WEBHOOK_VERIFY_TOKEN = os.environ.get('WEBHOOK_VERIFY_TOKEN', None)
 GRAPH_API_TOKEN = os.environ.get('GRAPH_API_TOKEN', None)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', None)
+
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+AUTHENTICATION_BACKENDS = (
+    'oauth2_provider.backends.OAuth2Backend',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+# Django OAuth Toolkit settings
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 36000,
+    'AUTHORIZATION_CODE_EXPIRE_SECONDS': 600,
+    # 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
+}

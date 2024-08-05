@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.contrib.auth.hashers import make_password
 from tastypie.serializers import Serializer
@@ -12,7 +13,7 @@ from website.api.exceptions import CustomBadRequest
 from website.models import *
 from website.utils import *
 from website.api.authorization import *
-from website.api.authentication import TokenAuthentication,InlineBasicAuthentication
+from website.api.authentication import *
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.exceptions import BadRequest, ImmediateHttpResponse
 from datetime import datetime,timedelta
@@ -21,9 +22,11 @@ from django.db.models import Q
 from website.utils import get_user_available_balance,register_new_user,thisisme_id_check
 import json
 from decimal import Decimal
-
+# from tastypie.authentication import OAuth20Authentication
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 class MultipartResource(object):
     def deserialize(self, request, data, format=None):
@@ -171,6 +174,7 @@ class UserResource(CorsResource):
         # For authentication, allow both basic and api key so that the key
         # can be grabbed, if needed.
         authentication = MultiAuthentication(
+            OAuth20Authentication(),
             InlineBasicAuthentication(),
             BasicAuthentication(),
             ApiKeyAuthentication(),TokenAuthentication())
@@ -688,6 +692,7 @@ class VoucherExchangeLeadResource(CorsResource):
         queryset = VoucherExchangeLead.objects.all()
         resource_name = 'voucher_exchanges'
         serializer = Serializer()
+        filtering = {'uid':ALL_WITH_RELATIONS}
         exclude = []
 
 

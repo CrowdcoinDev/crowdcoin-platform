@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
-from django.contrib.auth.models import User,Group
+from django.contrib.auth.models import Group, AbstractUser
 from django.db.models import Sum
 from django.utils.text import slugify
+from django.conf import settings
 import decimal
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +17,12 @@ CURRENCY_CHOICES = (
     ('EUR', 'Euro', '€')
 )
 
+
+class User(AbstractUser):
+    pass
+
 class UserProfile(models.Model):
-    user = models.OneToOneField(User,blank=True,null=True, on_delete=models.SET_NULL)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,blank=True,null=True, on_delete=models.SET_NULL)
     pin = models.CharField(max_length=10,default='0000',null=True, blank=True)
     identifier = models.ManyToManyField('UniqueIdentifier', blank=True, related_name="user_profile_identifier")
     is_verified = models.BooleanField(default=False)
@@ -397,9 +403,24 @@ class VoucherExchangeLead(models.Model):
                                                                           ("Canceled", "Canceled")))
     active = models.BooleanField(default=True)
     transactions = models.ManyToManyField(Transaction, blank=True)
+    uid = models.UUIDField(default=uuid.uuid4, editable=True)
 
     def __unicode__(self):
         return "%s : %s %s" % (self.status, self.old_voucher, self.new_voucher)
+
+    def save(self, *args, **kwargs):
+        if not self.uid:
+            # Generate initial slug
+            self.uid = uuid.uuid4()
+            # Check for collisions and add a counter if needed
+            original_uid = self.uid
+            queryset = VoucherProvider.objects.filter(uid=self.uid).exclude(pk=self.pk)
+            counter = 1
+            while queryset.exists():
+                self.uid = uuid.uuid4()
+                counter += 1
+                queryset = VoucherProvider.objects.filter(uid=self.uid).exclude(pk=self.pk)
+        super(VoucherExchangeLead, self).save(*args, **kwargs)
 
 
 class SmsTemplate(models.Model):
