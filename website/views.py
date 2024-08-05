@@ -424,10 +424,11 @@ def api_merchant_registration(request):
 
 
         welcome_msg = "(((C) Hi {first_name}\n"\
-            "Your Crowdcoin Merchant Details:\n"\
+            "Welcome to Crowdcoin:\n"\
+            "Access your wallet at http://crowdcoin.co.za\n"\
             "Username:{username}\n"\
             "Password:{password}\n"\
-            "Send/Recieve Crowdcoins at http://app.crowdcoin.co.za or dial *120*912*87#".format(first_name=user.first_name,username=user.username,password=request.POST.get('password'))
+            "".format(first_name=user.first_name,username=user.username,password=request.POST.get('password'))
 
         bank_deposit_msg = "(((C) Please Top-up your Merchant account with at least R 350.\n\n"\
             "FNB Banking details:\n"\

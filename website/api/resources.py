@@ -820,7 +820,7 @@ class VoucherPaymentLeadResource(MultipartResource,ModelResource):
                         message="You do not own {missing_key}."
                             .format(missing_key=bundle.data.get("pocket")))
 
-                if not transaction_pocket_from.balance() >= float(bundle.data.get("amount")):
+                if not transaction_pocket_from.balance() >= abs(float(bundle.data.get("amount"))):
                     raise CustomBadRequest(
                         code="insufficient_balance",
                         message="You do not have enough funds available in {missing_key}."
