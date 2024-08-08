@@ -1,0 +1,90 @@
+nedbank
+fetch("https://store.kazang.net/vending.php?cat=Money_Send&product_id=Nedbank_Cashout_6137", {
+  "headers": {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+    "cache-control": "no-cache",
+    "content-type": "application/x-www-form-urlencoded",
+    "pragma": "no-cache",
+    "priority": "u=0, i",
+    "sec-ch-ua": "\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1"
+  },
+  "referrer": "https://store.kazang.net/vending.php?cat=Money_Send&product_id=Nedbank_Cashout_6137",
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": "voucher_number=1234567890&voucher_pin=1234&Submit=Submit",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "include"
+});
+
+
+Capitec
+fetch("https://store.kazang.net/vending.php?cat=Money_Send&product_id=Capitec_Cash_Out_6451", {
+  "headers": {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+    "cache-control": "no-cache",
+    "content-type": "application/x-www-form-urlencoded",
+    "pragma": "no-cache",
+    "priority": "u=0, i",
+    "sec-ch-ua": "\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1"
+  },
+  "referrer": "https://store.kazang.net/vending.php?cat=Money_Send&product_id=Capitec_Cash_Out_6451",
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": "voucher_number=&voucher_pin=&Submit=Submit",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "include"
+});
+
+standard bank
+fetch("https://store.kazang.net/vending.php?cat=Money_Send&product_id=Std_Bank_Money_5686", {
+  "headers": {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+    "cache-control": "max-age=0",
+    "content-type": "application/x-www-form-urlencoded",
+    "priority": "u=0, i",
+    "sec-ch-ua": "\"Not)A;Brand\";v=\"99\", \"Google Chrome\";v=\"127\", \"Chromium\";v=\"127\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1"
+  },
+  "referrer": "https://store.kazang.net/vending.php?cat=Money_Send&product_id=Std_Bank_Money_5686",
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": "voucher_number=7962281858&user_pin=1257&Submit=Submit",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "include"
+});
+
+
+
+
+fetch("https://store.kazang.net/home.php", {
+  "headers": {},
+  "referrer": "https://store.kazang.net/home.php",
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": "username=8093542507&password=1992%40Kea&Submit=Submit",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "include"
+});

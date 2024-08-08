@@ -54,7 +54,8 @@ urlpatterns = [
     path(f'{api_prefix}register_merchant/', api_merchant_registration),
     path(f'{api_prefix}ussd/', ussd_view, name='ussd'),
     path(f'{api_prefix}otp/', get_otp_view, name='get_otp'),
-    path('loaderio-b193a2f576f0426fef58ef4dbe597971/', loaderio),
+    path('ussd/', include('MiUSSD.urls')),
+    # path('loaderio-b193a2f576f0426fef58ef4dbe597971/', loaderio),
     # path('sso/', include('freshdesk.urls')),
     path('', LandingView, name="landing"),
 ] + staticfiles_urlpatterns() + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

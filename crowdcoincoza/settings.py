@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'whatsapp_bot',
     'oauth2_provider',
     'corsheaders',
+    'MiUSSD',
 ]
 
 SITE_ID = 1
@@ -157,6 +158,14 @@ LOGGING = {
         'celery': {
             'handlers': ['file', 'console'],
             'level': 'INFO',
+        },
+        'whatsapp_bot': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+        },
+        'MiUSSD': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
         }
     }
 }

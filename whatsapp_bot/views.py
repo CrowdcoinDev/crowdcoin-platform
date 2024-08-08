@@ -5,24 +5,25 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
 import requests
-from .models import Conversation
-from .commands import download_file, exchange_voucher
+import logging
+from .models import UserInteraction, ResponseTemplate
+from django.contrib.auth import get_user_model
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
 COMMANDS = {
-    '': {
-        'description': 'Default: Search for Podcast',
-        'usage': 'keyword',
-        'function': download_file
-    },
     '/download': {
         'description': 'Downloads files',
         'usage': '/download URL',
-        'function': download_file
+        'function': 'download_file',
+        'template': 'download_file'
     },
     '/exchange': {
         'description': 'Exchange Voucher',
         'usage': '/exchange DATA',
-        'function': exchange_voucher
+        'function': 'exchange_voucher',
+        'template': 'exchange_voucher'
     }
 }
 
@@ -40,7 +41,6 @@ class WebhookView(View):
 
     def post(self, request, *args, **kwargs):
         try:
-            # import pdb; pdb.set_trace()
             data = json.loads(request.body.decode('utf-8'))
             message = data.get('entry', [{}])[0].get('changes', [{}])[0].get('value', {}).get('messages', [{}])[0]
 
@@ -54,59 +54,72 @@ class WebhookView(View):
             else:
                 return JsonResponse({'status': 'error', 'message': 'Invalid message format'}, status=400)
         except Exception as e:
+            logger.exception(e)
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
 
-    def handle_message(self, message, businessPhoneNumberId, profileName, businessPhoneNumberDisplay):
+    def handle_message(self, message, businessPhoneNumberId, profileName, businessPhoneNumberDisplay, *args, **kwargs):
         phone_number = message.get('from')
         text = message.get('text', {}).get('body', '').strip().lower()
-        if text:
+
+        # Check if the user exists
+        user = User.objects.filter(username=phone_number).first()
+        context = locals()
+        breakpoint()
+        if not user:
+            # signup_template = ResponseTemplate.objects.get(name="signup")
+            # response_message = signup_template.render(context)
+            return self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId,"signup",context)
+        else:
+            # Process the command or the default action
             command_prefix = text.split(' ')[0]
             command_argument = ' '.join(text.split(' ')[1:])
-            response_message = COMMANDS['']['function'](text, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
+            response_message = "Default response."
 
             if command_prefix in COMMANDS:
                 try:
-                    response_message = COMMANDS[command_prefix]['function'](command_argument, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
+                    command_function = COMMANDS[command_prefix]['function']
+                    response_message = globals()[command_function](command_argument, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
                 except Exception as e:
-                    response_message = "Error processing command: "
+                    logger.exception(e)
+                    response_message = "Error processing command."
             else:
-                available_commands = '\n'
-                # import pdb; pdb.set_trace()
-                for cmd,info in COMMANDS.items():
-                    available_commands += "*{cmd}* \n {description} \n Usage: `{usage}`\n\n".format(cmd=cmd, description=info['description'], usage=info['usage'])
-                response_message = "Try one of the following commands"+available_commands
+                response_message = "Invalid command. Try again."
 
-            # Save the conversation
-            conversation, created = Conversation.objects.get_or_create(phone_number=phone_number)
+        # Store the interaction
+        UserInteraction.objects.create(
+            user=user if user else None,
+            phone_number=phone_number,
+            message=text,
+            response=response_message
+        )
 
-            # if not conversation.messages:
-            #     conversation.messages = []
+        # Send the response via WhatsApp API
+        self.send_response_via_whatsapp(phone_number, response_message, businessPhoneNumberId)
 
-            # conversation.messages.append({'message': text, 'response': response_message})
-            conversation.save()
+        return response_message
 
-            # Implement logic to send the response via WhatsApp API
-            self.send_response_via_whatsapp(phone_number, response_message, businessPhoneNumberId)
-
-            return response_message
+    def send_response_via_whatsapp(self, phone_number, response_message, businessPhoneNumberId=None, template_name=None, context=None):
+        # Fetch the template from the database if a template name is provided
+        if template_name:
+            template = ResponseTemplate.objects.get(name=template_name)
+            data = template.render(context or {})
         else:
-            return "Invalid request"
+            # Default message structure if no template is used
+            data = {
+                "messaging_product": "whatsapp",
+                "to": phone_number,
+                "text": {"body": response_message}
+            }
 
-    def send_response_via_whatsapp(self, phone_number, response_message, businessPhoneNumberId):
-        # Implement the logic to send the response message via the WhatsApp API
-        url = "https://graph.facebook.com/v18.0/{businessPhoneNumberId}/messages".format(businessPhoneNumberId=businessPhoneNumberId)
+        url = f"https://graph.facebook.com/v18.0/{businessPhoneNumberId}/messages"
         headers = {
-            "Authorization": "Bearer {GRAPH_API_TOKEN}".format(GRAPH_API_TOKEN=settings.GRAPH_API_TOKEN),
+            "Authorization": f"Bearer {settings.GRAPH_API_TOKEN}",
             "Content-Type": "application/json"
         }
-        data = {
-            "messaging_product": "whatsapp",
-            "to": phone_number,
-            "text": {"body": response_message}
-        }
-        # import pdb; pdb.set_trace()
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code != 200:
-            print("Failed to send message: {response.status_code}, {response.text}".format(response.status_code,response.text))
 
-# Other views can be here...
+        if settings.PRODUCTION:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code != 200:
+                logger.warning(f"Failed to send message: {response.status_code}, {response.text}")
+        else:
+            logger.info(f"Sent message: {data}")
