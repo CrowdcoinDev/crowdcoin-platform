@@ -64,7 +64,6 @@ class WebhookView(View):
         # Check if the user exists
         user = User.objects.filter(username=phone_number).first()
         context = locals()
-        breakpoint()
         if not user:
             # signup_template = ResponseTemplate.objects.get(name="signup")
             # response_message = signup_template.render(context)
