@@ -136,7 +136,7 @@ class FlowView(View):
     def post(self, request, *args, **kwargs):
         try:
             logger.info(request.body)
-            breakpoint()
+            # breakpoint()
             encrypted_data =  json.loads(request.body).get('encrypted_flow_data')
             decrypted_body = decrypt_request(encrypted_data)
             
