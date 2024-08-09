@@ -136,7 +136,8 @@ class FlowView(View):
     def post(self, request, *args, **kwargs):
         try:
             logger.info(request.body)
-            encrypted_data = request.body
+            breakpoint()
+            encrypted_data =  json.loads(request.body).get('encrypted_flow_data')
             decrypted_body = decrypt_request(encrypted_data)
             
             # Determine the next screen/action based on the decrypted body

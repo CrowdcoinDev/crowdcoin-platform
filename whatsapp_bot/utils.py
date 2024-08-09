@@ -33,39 +33,6 @@ def decrypt_request(encrypted_data):
     return json.loads(decrypted_data)
 
 
-
-
-def load_keys():
-    with open('whatsapp_bot/configs/private.pem', 'rb') as f:
-        private_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
-    with open('whatsapp_bot/configs/public.pem', 'rb') as f:
-        public_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
-    return private_key, public_key
-
-_private_key, _public_key = load_keys()
-
-def decrypt_request(encrypted_data):
-    try:
-        # Ensure that the encrypted_data is correctly base64 encoded
-        encrypted_data = base64.b64decode(encrypted_data)
-        
-        # Load the private key
-        private_key = RSA.import_key(_private_key.export_key())
-        cipher_rsa = PKCS1_OAEP.new(private_key)
-        
-        # Decrypt the data
-        decrypted_data = cipher_rsa.decrypt(encrypted_data)
-        
-        return json.loads(decrypted_data)
-    
-    except ValueError as e:
-        logger.error(f"Decryption error: {e}")
-        raise ValueError("Decryption failed. Incorrect ciphertext length or format.")
-    except Exception as e:
-        logger.error(f"Unexpected error during decryption: {e}")
-        raise
-
-
 def encrypt_response(response_data):
     # Load the private key
     private_key = RSA.import_key(_private_key.export_key(), passphrase=settings.FLOW_PASSPHRASE)
