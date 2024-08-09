@@ -203,6 +203,8 @@ TIM_KEY = os.environ.get('TIM_KEY')
 WEBHOOK_VERIFY_TOKEN = os.environ.get('WEBHOOK_VERIFY_TOKEN', None)
 GRAPH_API_TOKEN = os.environ.get('GRAPH_API_TOKEN', None)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', None)
+FLOW_PRIVATE_KEY = os.environ.get('FLOW_PRIVATE_KEY', 'whatsapp_bot/configs/private.pem')
+FLOW_PASSPHRASE = os.environ.get('FLOW_PASSPHRASE', 'passphrase')
 
 
 CORS_ORIGIN_ALLOW_ALL = True

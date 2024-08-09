@@ -28,3 +28,21 @@ class UserInteraction(models.Model):
 
     def __str__(self):
         return f"Interaction with {self.phone_number} at {self.timestamp}"
+
+
+class Flow(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+class FlowStep(models.Model):
+    flow = models.ForeignKey(Flow, related_name='steps', on_delete=models.CASCADE)
+    step_number = models.PositiveIntegerField()
+    action = models.CharField(max_length=255)
+    response_template = models.ForeignKey('ResponseTemplate', on_delete=models.SET_NULL, null=True, blank=True)
+    next_step = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f"{self.flow.name} - Step {self.step_number}"

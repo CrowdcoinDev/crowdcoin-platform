@@ -1,13 +1,16 @@
 from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import get_user_model
+from .utils import decrypt_request, encrypt_response
+from .models import UserInteraction, ResponseTemplate, Flow, FlowStep
+
 import json
 import requests
 import logging
-from .models import UserInteraction, ResponseTemplate
-from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -60,14 +63,15 @@ class WebhookView(View):
     def handle_message(self, message, businessPhoneNumberId, profileName, businessPhoneNumberDisplay, *args, **kwargs):
         phone_number = message.get('from')
         text = message.get('text', {}).get('body', '').strip().lower()
+        is_template = False
 
         # Check if the user exists
         user = User.objects.filter(username=phone_number).first()
         context = locals()
         if not user:
-            # signup_template = ResponseTemplate.objects.get(name="signup")
-            # response_message = signup_template.render(context)
-            return self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId,"signup",context)
+            response_message = "signup"
+            is_template = True
+            # return self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId,"signup",context)
         else:
             # Process the command or the default action
             command_prefix = text.split(' ')[0]
@@ -93,7 +97,10 @@ class WebhookView(View):
         )
 
         # Send the response via WhatsApp API
-        self.send_response_via_whatsapp(phone_number, response_message, businessPhoneNumberId)
+        if is_template:
+            self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId, response_message,context)
+        else:
+            self.send_response_via_whatsapp(phone_number, response_message, businessPhoneNumberId)
 
         return response_message
 
@@ -122,3 +129,55 @@ class WebhookView(View):
                 logger.warning(f"Failed to send message: {response.status_code}, {response.text}")
         else:
             logger.info(f"Sent message: {data}")
+
+@method_decorator(csrf_exempt, name='dispatch')
+class FlowView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            encrypted_data = request.body
+            decrypted_body = decrypt_request(encrypted_data)
+            
+            # Determine the next screen/action based on the decrypted body
+            response_data = self.get_next_screen(decrypted_body)
+            
+            # Encrypt the response data
+            encrypted_response = encrypt_response(response_data)
+            
+            return HttpResponse(encrypted_response, content_type='application/json')
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    def get_next_screen(self, decrypted_body):
+        action = decrypted_body.get('action')
+        if action == "ping":
+            return {'data': {'status': 'active'}}
+        elif action == "INIT":
+            return {'screen': 'MY_SCREEN', 'data': {'greeting': 'Hey there! 👋'}}
+        elif action == "data_exchange":
+            # Handle data exchange based on the current screen
+            screen = decrypted_body.get('screen')
+            if screen == 'MY_SCREEN':
+                # Example: Update data or process interactions here
+                return {'screen': 'NEXT_SCREEN', 'data': {'confirmation': 'Data received!'}}
+        else:
+            return {'data': {'error': 'Unknown action'}}
+
+        return {'data': {'error': 'Invalid request'}}        
+
+    def handle_signup(self, phone_number):
+        """
+        Handles the signup process if the user is not found.
+        """
+        signup_template = ResponseTemplate.objects.filter(name='signup').first()
+        context = {'phone_number': phone_number}
+        rendered_signup = signup_template.render(context) if signup_template else "Please sign up to continue."
+        
+        # Optionally store the interaction even for signup prompts
+        UserInteraction.objects.create(
+            phone_number=phone_number,
+            message="Signup Prompt",
+            response=rendered_signup
+        )
+        
+        return JsonResponse({"message": rendered_signup}, status=200)
+

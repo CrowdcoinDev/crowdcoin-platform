@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserInteraction, ResponseTemplate
+from .models import *
 
 @admin.register(UserInteraction)
 class UserInteractionAdmin(admin.ModelAdmin):
@@ -7,3 +7,5 @@ class UserInteractionAdmin(admin.ModelAdmin):
     search_fields = ['phone_number','user','messages']
 
 admin.site.register(ResponseTemplate)
+admin.site.register(Flow)
+admin.site.register(FlowStep)
