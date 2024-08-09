@@ -1,13 +1,10 @@
-import base64
-import hashlib
-import hmac
 import json
-from Crypto.Cipher import PKCS1_OAEP
+from base64 import b64decode, b64encode
 from Crypto.PublicKey import RSA
-from Crypto.Signature import pkcs1_15
-from Crypto.Hash import SHA256
+from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1, hashes
+from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.conf import settings
-from Crypto.PublicKey import RSA
 import os
 import logging
 
@@ -23,25 +20,52 @@ def load_keys():
 
 _private_key, _public_key = load_keys()
 
-def decrypt_request(encrypted_data):
-    # Load the private key
-    private_key = RSA.import_key(_private_key.export_key(), passphrase=settings.FLOW_PASSPHRASE)
-    cipher_rsa = PKCS1_OAEP.new(private_key)
-    
-    # Decrypt the data
-    decrypted_data = cipher_rsa.decrypt(base64.b64decode(encrypted_data))
-    return json.loads(decrypted_data)
+def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64):
+    try:
+        # Decode the base64-encoded strings
+        breakpoint()
+        flow_data = b64decode(encrypted_flow_data_b64)
+        iv = b64decode(initial_vector_b64)
+        encrypted_aes_key = b64decode(encrypted_aes_key_b64)
+
+        # Load the RSA private key
+        private_key = _private_key
 
 
-def encrypt_response(response_data):
-    # Load the private key
-    private_key = RSA.import_key(_private_key.export_key(), passphrase=settings.FLOW_PASSPHRASE)
-    cipher_rsa = PKCS1_OAEP.new(private_key)
-    
-    # Encrypt the data
-    encrypted_data = base64.b64encode(cipher_rsa.encrypt(json.dumps(response_data).encode('utf-8')))
-    return encrypted_data
+        # Decrypt the AES key using RSA
+        aes_key = private_key.decrypt(encrypted_aes_key, OAEP(mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
 
+        # Decrypt the flow data using AES GCM mode
+        encrypted_flow_data_body = flow_data[:-16]
+        encrypted_flow_data_tag = flow_data[-16:]
+        decryptor = Cipher(algorithms.AES(aes_key), modes.GCM(iv, encrypted_flow_data_tag)).decryptor()
+        decrypted_data_bytes = decryptor.update(encrypted_flow_data_body) + decryptor.finalize()
+
+        # Parse and return the decrypted JSON data
+        decrypted_data = json.loads(decrypted_data_bytes.decode("utf-8"))
+        return decrypted_data, aes_key, iv
+
+    except Exception as e:
+        print(f"Decryption error: {e}")
+        raise
+
+def encrypt_response(response, aes_key, iv):
+    try:
+        # Flip the initialization vector for encryption (if required by your protocol)
+        flipped_iv = bytearray()
+        for byte in iv:
+            flipped_iv.append(byte ^ 0xFF)
+
+        # Encrypt the response data using AES GCM mode
+        encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(flipped_iv)).encryptor()
+        encrypted_data = encryptor.update(json.dumps(response).encode("utf-8")) + encryptor.finalize()
+
+        # Concatenate the encrypted data with the GCM tag and encode as base64
+        return b64encode(encrypted_data + encryptor.tag).decode("utf-8")
+
+    except Exception as e:
+        print(f"Encryption error: {e}")
+        raise
 def verify_signature(request, signature, public_key):
     h = SHA256.new(request.body)
     try:
