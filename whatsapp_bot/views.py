@@ -135,6 +135,7 @@ class WebhookView(View):
 class FlowView(View):
     def post(self, request, *args, **kwargs):
         try:
+            logger.info(request.body)
             encrypted_data = request.body
             decrypted_body = decrypt_request(encrypted_data)
             
@@ -146,7 +147,6 @@ class FlowView(View):
             
             return HttpResponse(encrypted_response, content_type='application/json')
         except Exception as e:
-            logger.warning(e)
             return JsonResponse({'error': str(e)}, status=400)
     
     def get_next_screen(self, decrypted_body):
