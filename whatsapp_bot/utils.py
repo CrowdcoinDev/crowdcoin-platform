@@ -16,9 +16,30 @@ logger = logging.getLogger(__name__)
 
 def load_keys():
     with open('whatsapp_bot/configs/private.pem', 'rb') as f:
-        private_key = RSA.import_key(f.read())
+        private_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
     with open('whatsapp_bot/configs/public.pem', 'rb') as f:
-        public_key = RSA.import_key(f.read())
+        public_key = RSA.importKey(f.read(), passphrase=settings.FLOW_PASSPHRASE)
+    return private_key, public_key
+
+_private_key, _public_key = load_keys()
+
+def decrypt_request(encrypted_data):
+    # Load the private key
+    private_key = RSA.import_key(_private_key.export_key(), passphrase=settings.FLOW_PASSPHRASE)
+    cipher_rsa = PKCS1_OAEP.new(private_key)
+    
+    # Decrypt the data
+    decrypted_data = cipher_rsa.decrypt(base64.b64decode(encrypted_data))
+    return json.loads(decrypted_data)
+
+
+
+
+def load_keys():
+    with open('whatsapp_bot/configs/private.pem', 'rb') as f:
+        private_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
+    with open('whatsapp_bot/configs/public.pem', 'rb') as f:
+        public_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
     return private_key, public_key
 
 _private_key, _public_key = load_keys()
