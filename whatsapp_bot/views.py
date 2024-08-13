@@ -137,6 +137,7 @@ class FlowView(View):
         try:
             # Parse the request body
             body = json.loads(request.body)
+            logger.info(f"Flow Data received: {body}")
             # Read the request fields
             encrypted_flow_data_b64 = body['encrypted_flow_data']
             encrypted_aes_key_b64 = body['encrypted_aes_key']
@@ -156,7 +157,7 @@ class FlowView(View):
             # Return the response as plaintext
             return HttpResponse(encrypt_response(response, aes_key, iv), content_type='text/plain')
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
             return JsonResponse({}, status=500)
 
     def get_next_screen(self, decrypted_body):
