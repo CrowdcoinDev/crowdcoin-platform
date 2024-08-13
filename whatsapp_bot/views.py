@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
 from .utils import decrypt_request, encrypt_response
 from .models import UserInteraction, ResponseTemplate
-
+from website.utils import get_user_available_balance,register_new_user
 
 import json
 import requests
@@ -27,6 +27,12 @@ COMMANDS = {
         'description': 'Exchange Voucher',
         'usage': '/exchange DATA',
         'function': 'exchange_voucher',
+        'template': 'exchange_voucher'
+    },
+    '/balance': {
+        'description': 'Check Balance',
+        'usage': '/balance',
+        'function': 'get_user_available_balance',
         'template': 'exchange_voucher'
     }
 }
@@ -71,23 +77,31 @@ class WebhookView(View):
         user = User.objects.filter(username=phone_number).first()
         context = locals()
         if not user:
+            breakpoint()
+            resp = register_new_user({'username':phone_number})
             response_message = "signup"
             is_template = True
-        else:
-            # Process the command or the default action
-            command_prefix = text.split(' ')[0]
-            command_argument = ' '.join(text.split(' ')[1:])
-            response_message = "Default response."
 
-            if command_prefix in COMMANDS:
-                try:
-                    command_function = COMMANDS[command_prefix]['function']
-                    response_message = globals()[command_function](command_argument, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
-                except Exception as e:
-                    logger.exception(e)
-                    response_message = "Error processing command."
-            else:
-                response_message = "Invalid command. Try again."
+        # Process the command or the default action
+        command_prefix = text.split(' ')[0]
+        command_argument = ' '.join(text.split(' ')[1:])
+        response_message = "Default response."
+
+        if command_prefix == '/balance':
+            breakpoint()
+            command_function = COMMANDS[command_prefix]['function']
+            balance = globals()[command_function](phone_number)
+            response_message = f'Your avalable balance is R{balance}'
+
+        elif command_prefix in COMMANDS:
+            try:
+                command_function = COMMANDS[command_prefix]['function']
+                response_message = globals()[command_function](command_argument, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
+            except Exception as e:
+                logger.exception(e)
+                response_message = "Error processing command."
+        else:
+            response_message = f"Invalid command: {command_prefix}. Try again."
 
         # Store the interaction
         UserInteraction.objects.create(

@@ -1,5 +1,5 @@
 from website.models import *
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from django.db.models import Sum
 import random
 import urllib
@@ -17,8 +17,9 @@ from tastypie.models import ApiKey
 from xhtml2pdf import pisa
 from django import template
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
-
+User = get_user_model()
 register = template.Library()
 logger = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -92,7 +93,9 @@ def send_sms(message,msisdn):
 
 def register_new_user(*args,**kwargs):
     from website.models import UserProfile
-    from django.contrib.auth.models import User
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
     try:
         logger.info(kwargs)
         logger.info(args)
@@ -539,28 +542,29 @@ def thisisme_id_check(identity_number,country_code='ZA',username=None,identity_t
         logger.error(e)
         return {'response':response,'status':'error'}
         
-def get_user_available_balance(username=None,ending=None):
+def get_user_available_balance(username,ending=None):
+    from .models import  UserProfile
     try:
         logger.debug(username)
-        if username is not None:
-            user_profile = UserProfile.objects.get(user__username=username)
-        if ending is not None:
-            if username is None:
-                funds_transactions = FundsTransaction.objects.filter(datetime__lte=ending)
-            else:
-                funds_transactions = FundsTransaction.objects.filter(profile=user_profile,datetime__lte=ending)
-        else:
-            funds_transactions = FundsTransaction.objects.filter(profile=user_profile).order_by("datetime")
-        debits =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"],transaction_type__action="Debit").aggregate(Sum('amount'))
-        credits =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"],transaction_type__action="Credit").aggregate(Sum('amount'))
-        fees =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"]).aggregate(Sum('fee'))
-        if credits.get('amount__sum') == None:
-            credits['amount__sum'] = 0
-        if debits.get('amount__sum') == None:
-            debits['amount__sum'] = 0
-        if fees.get('fee__sum') == None:
-            fees['fee__sum'] = 0
-        available_balance = credits.get('amount__sum')-(debits.get('amount__sum')+fees.get('fee__sum'))
+        user_profile = UserProfile.objects.get(user__username=username)
+        available_balance = user_profile.default_pocket.balance()
+        # if ending is not None:
+        #     if username is None:
+        #         funds_transactions = FundsTransaction.objects.filter(datetime__lte=ending)
+        #     else:
+        #         funds_transactions = FundsTransaction.objects.filter(profile=user_profile,datetime__lte=ending)
+        # else:
+        #     funds_transactions = FundsTransaction.objects.filter(profile=user_profile).order_by("datetime")
+        # debits =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"],transaction_type__action="Debit").aggregate(Sum('amount'))
+        # credits =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"],transaction_type__action="Credit").aggregate(Sum('amount'))
+        # fees =funds_transactions.filter(status__in=["Approved","Pending","Awaiting Authorisation","Completed"]).aggregate(Sum('fee'))
+        # if credits.get('amount__sum') == None:
+        #     credits['amount__sum'] = 0
+        # if debits.get('amount__sum') == None:
+        #     debits['amount__sum'] = 0
+        # if fees.get('fee__sum') == None:
+        #     fees['fee__sum'] = 0
+        # available_balance = credits.get('amount__sum')-(debits.get('amount__sum')+fees.get('fee__sum'))
         return available_balance
     except Exception as e:
         logger.info(e)
