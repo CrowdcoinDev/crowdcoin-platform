@@ -56,23 +56,40 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
         logger.error(f"Decryption error: {e}")
         raise
 
+# def encrypt_response(response, aes_key, iv):
+#     try:
+#         # Convert response to bytes
+#         response_bytes = json.dumps(response).encode('utf-8')
+
+#         # Encrypt the response
+#         encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(iv)).encryptor()
+#         ciphertext = encryptor.update(response_bytes) + encryptor.finalize()
+
+#         # Append the GCM tag to the ciphertext
+#         ciphertext_with_tag = ciphertext + encryptor.tag
+
+#         # Encode the ciphertext in base64
+#         encrypted_response_b64 = b64encode(ciphertext_with_tag).decode('utf-8')
+#         return encrypted_response_b64
+
+#     except Exception as e:
+#         logger.error(f"Encryption error: {e}")
+#         raise
+
 def encrypt_response(response, aes_key, iv):
-    try:
-        # Convert response to bytes
-        response_bytes = json.dumps(response).encode('utf-8')
+    # Flip the initialization vector
+    flipped_iv = bytearray()
+    for byte in iv:
+        flipped_iv.append(byte ^ 0xFF)
 
-        # Encrypt the response
-        encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(iv)).encryptor()
-        ciphertext = encryptor.update(response_bytes) + encryptor.finalize()
+    # Encrypt the response data
+    encryptor = Cipher(algorithms.AES(aes_key),
+                       modes.GCM(flipped_iv)).encryptor()
+    encrypted_response_b64 = b64encode(
+        encryptor.update(json.dumps(response).encode("utf-8")) +
+        encryptor.finalize() +
+        encryptor.tag
+    ).decode("utf-8")
 
-        # Append the GCM tag to the ciphertext
-        ciphertext_with_tag = ciphertext + encryptor.tag
-
-        # Encode the ciphertext in base64
-        encrypted_response_b64 = b64encode(ciphertext_with_tag).decode('utf-8')
-        logger.error(f"Encryption Successful:{response_bytes} --> {encrypted_response_b64}")
-        return encrypted_response_b64
-
-    except Exception as e:
-        logger.error(f"Encryption error: {e}")
-        raise
+    logger.info(f"Encryption Successful:{response} --> {encrypted_response_b64}")
+    return encrypted_response_b64
