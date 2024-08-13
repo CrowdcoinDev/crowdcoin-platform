@@ -20,7 +20,8 @@ networks_to_dict={1:"Mtn",2:"Vodacom",4:"Cell C",3:"Telkom Mobile"}
 
 def LandingView(request):
     response = "It works!"
-    return HttpResponse(response)
+    # return HttpResponse(response)
+    return redirect('https://crowdcoin.co.za')
 
 
 def loaderio(request):
