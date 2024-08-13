@@ -169,11 +169,23 @@ class FlowView(View):
         elif action == "data_exchange":
             # Handle data exchange based on the current screen
             screen = decrypted_body.get('screen')
-            if screen == 'MY_SCREEN':
+            if screen == 'SIGN_UP':
                 # Example: Update data or process interactions here
-                return {'screen': 'NEXT_SCREEN', 'data': {'confirmation': 'Data received!'}}
+                return {'screen': 'SUCCESS', 'data': {'confirmation': 'Data received!'}}
         else:
-            return {'data': {'error': 'Unknown action'}}
+            logger.debug(f"Unknown Action: {action}")
+            return {
+                'screen': 'SUCCESS',
+                'data': {
+                    'extension_message_response': {
+                        'params': {
+                            'flow_token': f'{decrypted_body.get("flow_token")}',
+                            'optional_param1': '<value1>',
+                            'optional_param2': '<value2>'
+                        }
+                    }
+                }                
+            }
 
         return {'data': {'error': 'Invalid request'}}        
 
