@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
-
+from django.conf import settings
 import json
 import logging
 
@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def load_keys():
     # Load the private key
     with open('whatsapp_bot/configs/private.pem', 'rb') as f:
-        private_key = load_pem_private_key(f.read(), password=b'passphrase')
+        passphrase = f'{settings.FLOW_PASSPHRASE}'.encode(encoding="utf-8")
+        private_key = load_pem_private_key(f.read(), password=passphrase)
     
     # Load the public key
     with open('whatsapp_bot/configs/public.pem', 'rb') as f:
@@ -48,6 +49,7 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
 
         # Parse and return the decrypted JSON data
         decrypted_data = json.loads(decrypted_data_bytes.decode("utf-8"))
+        logger.info(f"Decryption Successful: {decrypted_data}")
         return decrypted_data, aes_key, iv
 
     except Exception as e:
@@ -68,6 +70,7 @@ def encrypt_response(response, aes_key, iv):
 
         # Encode the ciphertext in base64
         encrypted_response_b64 = b64encode(ciphertext_with_tag).decode('utf-8')
+        logger.error(f"Encryption Successful:{response_bytes} --> {encrypted_response_b64}")
         return encrypted_response_b64
 
     except Exception as e:

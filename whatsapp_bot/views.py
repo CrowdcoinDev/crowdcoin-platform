@@ -143,7 +143,6 @@ class FlowView(View):
             initial_vector_b64 = body['initial_vector']
 
             decrypted_data, aes_key, iv = decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
-            print(decrypted_data)
 
             # Return the next screen & data to the client
             response = {
