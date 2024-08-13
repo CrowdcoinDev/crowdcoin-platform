@@ -145,12 +145,13 @@ class FlowView(View):
             decrypted_data, aes_key, iv = decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
 
             # Return the next screen & data to the client
-            response = {
-                "screen": "SCREEN_NAME",
-                "data": {
-                    "some_key": "some_value"
-                }
-            }
+            # response = {
+            #     "screen": "SCREEN_NAME",
+            #     "data": {
+            #         "some_key": "some_value"
+            #     }
+            # }
+            response = self.get_next_screen(decrypted_data)
 
             # Return the response as plaintext
             return HttpResponse(encrypt_response(response, aes_key, iv), content_type='text/plain')
