@@ -6,49 +6,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
 from .utils import decrypt_request, encrypt_response
-from .models import UserInteraction, ResponseTemplate, Flow, FlowStep
-
-
-import json
-import os
-from base64 import b64decode, b64encode
-from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1, hashes
-from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-
-
-# Load the private key string
-PRIVATE_KEY = "-----BEGIN ENCRYPTED PRIVATE KEY----- \
-MIIFHDBOBgkqhkiG9w0BBQ0wQTApBgkqhkiG9w0BBQwwHAQIMewEm5d+3FsCAggA \
-MAwGCCqGSIb3DQIJBQAwFAYIKoZIhvcNAwcECPrwdrHpJzQYBIIEyB1WEsy7F5aE \
-XK+6JWi21/pp34BbGKZtchCCeBnKT+jURDu/zXIvoFmXp4i4ljjyjq0SED0FJSs6 \
-BBal/QnGn/NPB7jv1B6U47DYWRGN0RP5ocqjeNv8kbntr7GIT7EgXsOs6ZG20FKm \
-fP9amdex1me8RvNJdsXthQjedK6ysW/nyLDVOBeoRZfzyMlWbsi14P57ZMj0Po8T \
-n/5iZUdRSYZ7VwI8dzI+Gw1vJ8pwKfjAscZ9dNe9YS9t2jGdCNL63y675tNCw86X \
-4w9n/hRN2x5td7ZBxjjnkgyHsQPn01SKaCwkZ9RnTZG5qQp1ZuNU/N4gsC5GbOox \
-+DgwWKsBB592oXfZt623RDh5vl2a4PIornhTJZTaMwjnvTCtgYP8xRaemCR4KIpA \
-e9JgznXGTApafIhSajo60MxUBZUWZqtOZob6qpFt2CYQTtvOCnfc2O5kvKwWBqrd \
-E6IBbq5zQN5KQrMfIUXr0Kd66R3+i7NxfyWL59d7uwAN7Tdm6DBoRRKtK7PULULZ \
-+BjCoaFWN71BvVLVovFSW9uEfHgXca/5FVItypfbd60dhOyjeTaaS0rA6P9EEASi \
-SYVJ3YBbt5pRjQLF6+VaTaG/ggyRqorxOA8e+bh89BS0qTzaCUGnmtipjq88RGPq \
-chf10lBH5XjBbYhNyAkZeCoYwwCcfdYIBjyxRJTdrFZIZVz/fqz4e4vDEn1yp32g \
-FJ0DGQuJ2ti0NFlzuRiUgxjx/NklkEhnyNcV0+kwxwxP6ts3gu9H2xSnv6cfAjT2 \
-VbicEpLNMlDnMGKZwXgt3Zj4l3VnQe5SXNahjo+NWiLIoQgBKhGnoa5e/gn8apyW \
-Z54WQV4xknpjF+GBKaInSNz3AB04dQKX7acYGVg4f62RiMIBn4kj4VcKU3HbbS10 \
-e+NCZ7TZzK9T0F9vNXwcBvXu2i0AJWMzz2WwBC+GlVKT+O1VvoXQbXC2QfltJQ5y \
-qH4oKA63Fd7ZEXJz5OpTAhcFwK2gdndMkJUrDCLEFdpseUpapPwFRHOXlRUaHOV9 \
-p1+LmxLVv4nHCF+aNSjD5bjggel2J4BEe44Lf0lX0TV8hBIaynm9rJWd9c5/ZFe7 \
-GfOvEEdBGRf41TyTMlUdo5hTitV3s8ef81Qznwlmbtup6xW8eF0SFd3h7yFvs4u2 \
-uXp6KeDZM4pf/ct/wHa4bpVhdR1JVfymFRCTsCL49TCsD52IdxF3JlpjktSrzKOT \
-JwFyAM7Wh96B3X5Gdu4hI6mxTZOSufkjvKPnwXNEo0t9fwPYtsCFdCSIPkGvZzX/ \
-sYkLqRdR2NgOrg6L4QOmJddOxE0RVcTpvpeIWxbYkLT6QVoitDGpNJX4L2NcI/mm \
-7KVsapeKOLhVH6+0ShsETcDCAHEGYWvZQLJCA/VUzrQAwJYYyeTrYRX5+/MmTRjd \
-B7h9YqBsV0eDXrRipyuom/Hqjai2HJ/5BR6yQjufCrGlstJUdbT8nwoYGMNPOrTz \
-R2cUJIqYzysgh/VaxAesF6bnFob+RT8xGWFpQId/c0teL7CEBq7D08bhALJT8Em1 \
-8vbQtB4RLDWje8bi8aDi4AQZabIax5RyZhM8hhAU/zo7BVInsm0bcYPG1ROLDlSQ \
-SFNMiWrprN/NiFGMxTyj6w== \
------END ENCRYPTED PRIVATE KEY----- \
-"
+from .models import UserInteraction, ResponseTemplate
 
 
 import json
@@ -115,7 +73,6 @@ class WebhookView(View):
         if not user:
             response_message = "signup"
             is_template = True
-            # return self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId,"signup",context)
         else:
             # Process the command or the default action
             command_prefix = text.split(' ')[0]
@@ -142,7 +99,7 @@ class WebhookView(View):
 
         # Send the response via WhatsApp API
         if is_template:
-            self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId, response_message,context)
+            self.send_response_via_whatsapp(phone_number, None, businessPhoneNumberId, response_message, context)
         else:
             self.send_response_via_whatsapp(phone_number, response_message, businessPhoneNumberId)
 
@@ -180,14 +137,12 @@ class FlowView(View):
         try:
             # Parse the request body
             body = json.loads(request.body)
-
             # Read the request fields
             encrypted_flow_data_b64 = body['encrypted_flow_data']
             encrypted_aes_key_b64 = body['encrypted_aes_key']
             initial_vector_b64 = body['initial_vector']
 
-            decrypted_data, aes_key, iv = decrypt_request(
-                encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
+            decrypted_data, aes_key, iv = decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
             print(decrypted_data)
 
             # Return the next screen & data to the client
@@ -201,9 +156,8 @@ class FlowView(View):
             # Return the response as plaintext
             return HttpResponse(encrypt_response(response, aes_key, iv), content_type='text/plain')
         except Exception as e:
-            print(e)
+            logger.exception(e)
             return JsonResponse({}, status=500)
-
 
     def get_next_screen(self, decrypted_body):
         action = decrypted_body.get('action')
@@ -238,42 +192,3 @@ class FlowView(View):
         )
         
         return JsonResponse({"message": rendered_signup}, status=200)
-
-
-
-def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64):
-    flow_data = b64decode(encrypted_flow_data_b64)
-    iv = b64decode(initial_vector_b64)
-
-    # Decrypt the AES encryption key
-    encrypted_aes_key = b64decode(encrypted_aes_key_b64)
-    private_key = load_pem_private_key(
-        PRIVATE_KEY.encode('utf-8'), password=None)
-    aes_key = private_key.decrypt(encrypted_aes_key, OAEP(
-        mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
-
-    # Decrypt the Flow data
-    encrypted_flow_data_body = flow_data[:-16]
-    encrypted_flow_data_tag = flow_data[-16:]
-    decryptor = Cipher(algorithms.AES(aes_key),
-                       modes.GCM(iv, encrypted_flow_data_tag)).decryptor()
-    decrypted_data_bytes = decryptor.update(
-        encrypted_flow_data_body) + decryptor.finalize()
-    decrypted_data = json.loads(decrypted_data_bytes.decode("utf-8"))
-    return decrypted_data, aes_key, iv
-
-
-def encrypt_response(response, aes_key, iv):
-    # Flip the initialization vector
-    flipped_iv = bytearray()
-    for byte in iv:
-        flipped_iv.append(byte ^ 0xFF)
-
-    # Encrypt the response data
-    encryptor = Cipher(algorithms.AES(aes_key),
-                       modes.GCM(flipped_iv)).encryptor()
-    return b64encode(
-        encryptor.update(json.dumps(response).encode("utf-8")) +
-        encryptor.finalize() +
-        encryptor.tag
-    ).decode("utf-8")

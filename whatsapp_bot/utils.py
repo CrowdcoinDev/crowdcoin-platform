@@ -1,21 +1,24 @@
-import json
 from base64 import b64decode, b64encode
-from Crypto.PublicKey import RSA
-from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1, hashes
+from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from django.conf import settings
-import os
-import logging
+from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 
+import json
+import logging
 
 logger = logging.getLogger(__name__)
 
 def load_keys():
+    # Load the private key
     with open('whatsapp_bot/configs/private.pem', 'rb') as f:
-        private_key = RSA.import_key(f.read(), passphrase=settings.FLOW_PASSPHRASE)
+        private_key = load_pem_private_key(f.read(), password=b'passphrase')
+    
+    # Load the public key
     with open('whatsapp_bot/configs/public.pem', 'rb') as f:
-        public_key = RSA.importKey(f.read(), passphrase=settings.FLOW_PASSPHRASE)
+        public_key = load_pem_public_key(f.read())  # Correct method for loading public keys
+    
     return private_key, public_key
 
 _private_key, _public_key = load_keys()
@@ -23,17 +26,19 @@ _private_key, _public_key = load_keys()
 def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64):
     try:
         # Decode the base64-encoded strings
-        breakpoint()
         flow_data = b64decode(encrypted_flow_data_b64)
         iv = b64decode(initial_vector_b64)
         encrypted_aes_key = b64decode(encrypted_aes_key_b64)
 
-        # Load the RSA private key
-        private_key = _private_key
-
-
-        # Decrypt the AES key using RSA
-        aes_key = private_key.decrypt(encrypted_aes_key, OAEP(mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+        # Decrypt the AES key using RSA with OAEP padding
+        aes_key = _private_key.decrypt(
+            encrypted_aes_key,
+            OAEP(
+                mgf=MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
 
         # Decrypt the flow data using AES GCM mode
         encrypted_flow_data_body = flow_data[:-16]
@@ -46,30 +51,25 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
         return decrypted_data, aes_key, iv
 
     except Exception as e:
-        print(f"Decryption error: {e}")
+        logger.error(f"Decryption error: {e}")
         raise
 
 def encrypt_response(response, aes_key, iv):
     try:
-        # Flip the initialization vector for encryption (if required by your protocol)
-        flipped_iv = bytearray()
-        for byte in iv:
-            flipped_iv.append(byte ^ 0xFF)
+        # Convert response to bytes
+        response_bytes = json.dumps(response).encode('utf-8')
 
-        # Encrypt the response data using AES GCM mode
-        encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(flipped_iv)).encryptor()
-        encrypted_data = encryptor.update(json.dumps(response).encode("utf-8")) + encryptor.finalize()
+        # Encrypt the response
+        encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(iv)).encryptor()
+        ciphertext = encryptor.update(response_bytes) + encryptor.finalize()
 
-        # Concatenate the encrypted data with the GCM tag and encode as base64
-        return b64encode(encrypted_data + encryptor.tag).decode("utf-8")
+        # Append the GCM tag to the ciphertext
+        ciphertext_with_tag = ciphertext + encryptor.tag
+
+        # Encode the ciphertext in base64
+        encrypted_response_b64 = b64encode(ciphertext_with_tag).decode('utf-8')
+        return encrypted_response_b64
 
     except Exception as e:
-        print(f"Encryption error: {e}")
+        logger.error(f"Encryption error: {e}")
         raise
-def verify_signature(request, signature, public_key):
-    h = SHA256.new(request.body)
-    try:
-        pkcs1_15.new(public_key).verify(h, base64.b64decode(signature))
-        return True
-    except (ValueError, TypeError):
-        return False
