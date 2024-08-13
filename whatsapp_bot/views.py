@@ -29,7 +29,7 @@ COMMANDS = {
         'function': 'exchange_voucher',
         'template': 'exchange_voucher'
     },
-    '/balance': {
+    '5': {
         'description': 'Check Balance',
         'usage': '/balance',
         'function': 'get_user_available_balance',
@@ -77,31 +77,30 @@ class WebhookView(View):
         user = User.objects.filter(username=phone_number).first()
         context = locals()
         if not user:
-            breakpoint()
             resp = register_new_user({'username':phone_number})
-            response_message = "signup"
-            is_template = True
+
+        # return main menu by default
+        # response_message = "main_menu"
 
         # Process the command or the default action
         command_prefix = text.split(' ')[0]
         command_argument = ' '.join(text.split(' ')[1:])
-        response_message = "Default response."
 
-        if command_prefix == '/balance':
-            breakpoint()
-            command_function = COMMANDS[command_prefix]['function']
-            balance = globals()[command_function](phone_number)
-            response_message = f'Your avalable balance is R{balance}'
+        # if command_prefix in ['4','/balance']:
+        #     command_function = COMMANDS[command_prefix]['function']
+        #     balance = globals()[command_function](phone_number)
+        #     response_message = f'Your available balance is R{balance}'
 
-        elif command_prefix in COMMANDS:
+        if command_prefix in COMMANDS:
             try:
                 command_function = COMMANDS[command_prefix]['function']
-                response_message = globals()[command_function](command_argument, phone_number, businessPhoneNumberId, businessPhoneNumberDisplay)
+                response_message = globals()[command_function](phone_number)
             except Exception as e:
                 logger.exception(e)
                 response_message = "Error processing command."
         else:
-            response_message = f"Invalid command: {command_prefix}. Try again."
+            response_message = "main_menu" #f"Invalid command: {command_prefix}. Try again."
+            is_template = True
 
         # Store the interaction
         UserInteraction.objects.create(
@@ -121,10 +120,11 @@ class WebhookView(View):
 
     def send_response_via_whatsapp(self, phone_number, response_message, businessPhoneNumberId=None, template_name=None, context=None):
         # Fetch the template from the database if a template name is provided
-        if template_name:
-            template = ResponseTemplate.objects.get(name=template_name)
+        logger.debug(f"response : {response_message} template {template_name}")
+        try:
+            template = ResponseTemplate.objects.filter(name=template_name).first()
             data = template.render(context or {})
-        else:
+        except Exception as e:
             # Default message structure if no template is used
             data = {
                 "messaging_product": "whatsapp",
