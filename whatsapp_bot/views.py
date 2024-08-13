@@ -165,7 +165,7 @@ class FlowView(View):
         if action == "ping":
             return {'data': {'status': 'active'}}
         elif action == "INIT":
-            return {'screen': 'MY_SCREEN', 'data': {'greeting': 'Hey there! 👋'}}
+            return {'screen': 'SIGN_IN', 'data': {'greeting': 'Hey there! 👋'}}
         elif action == "data_exchange":
             # Handle data exchange based on the current screen
             screen = decrypted_body.get('screen')
