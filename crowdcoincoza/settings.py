@@ -7,6 +7,10 @@ from django.core.management.utils import get_random_secret_key
 
 uuid._uuid_generate_random = None
 
+def str_to_bool(s):
+    return s.lower() in ['true', '1', 't', 'yes', 'y']
+
+
 # Initialize environment variables
 env = environ.Env(
     DEBUG=(bool, False),
@@ -48,6 +52,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'corsheaders',
     'MiUSSD',
+    'kazang',
 ]
 
 SITE_ID = 1
@@ -166,6 +171,10 @@ LOGGING = {
         'MiUSSD': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
+        },
+        'kazang': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
         }
     }
 }
@@ -198,6 +207,11 @@ PANACEA_PASSWORD = os.environ.get('PANACEA_PASSWORD')
 # TIM settings
 TIM_CERT = os.environ.get('TIM_CERT')
 TIM_KEY = os.environ.get('TIM_KEY')
+
+# Kazang settings
+KAZANG_USERNAME = os.environ.get('KAZANG_USERNAME')
+KAZANG_PASSWORD = os.environ.get('KAZANG_PASSWORD')
+KAZANG_DEBUG = str_to_bool(os.environ.get('KAZANG_DEBUG', 'False'))
 
 # Whatsapp settings
 WEBHOOK_VERIFY_TOKEN = os.environ.get('WEBHOOK_VERIFY_TOKEN', None)
